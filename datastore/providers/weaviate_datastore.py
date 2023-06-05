@@ -313,7 +313,7 @@ class WeaviateDataStore(DataStore):
 
         return True
 
-     @staticmethod
+    @staticmethod
     def build_filters(filter):
         if filter.source:
             filter.source = filter.source.value
