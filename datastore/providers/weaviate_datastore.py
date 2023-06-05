@@ -235,7 +235,7 @@ class WeaviateDataStore(DataStore):
                     .with_hybrid(query=query.query, alpha=0.5, vector=query.embedding)
                     .with_where(filters_)
                     .with_limit(query.top_k)  # type: ignore
-                    .with_additional(["score", "vector"])
+                    .with_additional(["score"]) #, "vector"])
                     .do()
                 )
 
@@ -246,7 +246,7 @@ class WeaviateDataStore(DataStore):
                 result = DocumentChunkWithScore(
                     id=resp["chunk_id"],
                     text=resp["text"],
-                    embedding=resp["_additional"]["vector"],
+                    #embedding=resp["_additional"]["vector"],
                     score=resp["_additional"]["score"],
                     metadata=DocumentChunkMetadata(
                         document_id=resp["document_id"] if resp["document_id"] else "",
@@ -326,7 +326,7 @@ class WeaviateDataStore(DataStore):
                 "value_key": "valueString",
             },
             "start_date": {"operator": "GreaterThanEqual", "value_key": "valueDate"},
-            "end_date": {"operator": "LessThanEqual", "value_key": "valueDate"},
+                "end_date": {"operator": "LessThanEqual", "value_key": "valueDate"},
             "document_id": {"operator": "Equal", "value_key": "valueString"},  # Add this line
             "default": {"operator": "Equal", "value_key": "valueString"},
         }
