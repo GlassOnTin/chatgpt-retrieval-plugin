@@ -313,7 +313,7 @@ class WeaviateDataStore(DataStore):
 
         return True
 
-    @staticmethod
+     @staticmethod
     def build_filters(filter):
         if filter.source:
             filter.source = filter.source.value
@@ -327,6 +327,7 @@ class WeaviateDataStore(DataStore):
             },
             "start_date": {"operator": "GreaterThanEqual", "value_key": "valueDate"},
             "end_date": {"operator": "LessThanEqual", "value_key": "valueDate"},
+            "document_id": {"operator": "Equal", "value_key": "valueString"},  # Add this line
             "default": {"operator": "Equal", "value_key": "valueString"},
         }
 
@@ -350,6 +351,7 @@ class WeaviateDataStore(DataStore):
                 operands.append(operand)
 
         return {"operator": "And", "operands": operands}
+
 
     @staticmethod
     def _is_valid_weaviate_id(candidate_id: str) -> bool:
