@@ -147,9 +147,9 @@ async def query(
         raise HTTPException(status_code=500, detail="Internal Service Error")
 
 
-@app.delete(
+@app.post(
     "/delete",
-    response_model=DeleteResponse,
+    response_model=DeleteResponse
 )
 async def delete(
     request: DeleteRequest = Body(...),
