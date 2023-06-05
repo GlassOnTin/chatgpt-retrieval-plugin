@@ -59,7 +59,7 @@ paths:
       security:
         - HTTPBearer: []
   /delete:
-    delete:
+    post:
       summary: Delete
       description: Delete documents based on IDs or filter. If delete_all is true, all documents will be deleted.
       operationId: delete_delete_post
