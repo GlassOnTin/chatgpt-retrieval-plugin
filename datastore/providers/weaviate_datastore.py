@@ -213,7 +213,7 @@ class WeaviateDataStore(DataStore):
                     )
                     .with_hybrid(query=query.query, alpha=0.5, vector=query.embedding)
                     .with_limit(query.top_k)  # type: ignore
-                    .with_additional(["score", "vector"])
+                    .with_additional(["score"])  #, "vector"])
                     .do()
                 )
             else:
