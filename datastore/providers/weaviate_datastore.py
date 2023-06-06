@@ -289,7 +289,7 @@ class WeaviateDataStore(DataStore):
 
         if ids:
             operands = [
-                {"path": ["id"], "operator": "Equal", "valueString": id}
+                {"path": ["document_id"], "operator": "Equal", "valueString": id}
                 for id in ids
             ]
 
@@ -319,6 +319,7 @@ class WeaviateDataStore(DataStore):
                 logger.debug(
                     f"Failed to delete the following objects: {result['results']['objects']}"
                 )
+
         return True
 
     @staticmethod
