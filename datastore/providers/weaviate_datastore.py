@@ -329,6 +329,8 @@ class WeaviateDataStore(DataStore):
                 result = self.client.batch.delete_objects(
                     class_name=WEAVIATE_CLASS, where=where_clause
                 )
+                logger.debug(f"Delete result: {result}")
+                
             except Exception as e:
                 logger.error(f"Failed to delete vectors with filter {where_clause}: {e}")
                 return False
