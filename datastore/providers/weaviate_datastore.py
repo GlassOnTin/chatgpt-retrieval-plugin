@@ -374,11 +374,11 @@ class WeaviateDataStore(DataStore):
                     value_key: value,
                 }
 
+                logger.debug(f"Operand: {operand}")
                 operands.append(operand)
 
         return {"operator": "And", "operands": operands}
-
-
+    
     @staticmethod
     def _is_valid_weaviate_id(candidate_id: str) -> bool:
         """
