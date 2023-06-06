@@ -326,8 +326,8 @@ class WeaviateDataStore(DataStore):
                 "value_key": "valueString",
             },
             "start_date": {"operator": "GreaterThanEqual", "value_key": "valueDate"},
-                "end_date": {"operator": "LessThanEqual", "value_key": "valueDate"},
-            "document_id": {"operator": "Equal", "value_key": "valueString"},  # Add this line
+            "end_date": {"operator": "LessThanEqual", "value_key": "valueDate"},
+            "document_id": {"operator": "Equal", "value_key": "valueString"},
             "default": {"operator": "Equal", "value_key": "valueString"},
         }
 
