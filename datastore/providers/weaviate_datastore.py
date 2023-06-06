@@ -197,25 +197,27 @@ class WeaviateDataStore(DataStore):
         async def _single_query(query: QueryWithEmbedding) -> QueryResult:
             logger.debug(f"Query: {query.query}")
             if not hasattr(query, "filter") or not query.filter:
-                result = (
-                    self.client.query.get(
-                        WEAVIATE_CLASS,
-                        [
-                            "chunk_id",
-                            "document_id",
-                            "text",
-                            "source",
-                            "source_id",
-                            "url",
-                            "created_at",
-                            "author",
-                        ],
+                if query.query:
+                    result = (
+                        self.client.query.get(
+                            WEAVIATE_CLASS,
+                            [
+                                "chunk_id",
+                                "document_id",
+                                "text",
+                                "source",
+                                "source_id",
+                                "url",
+                                "created_at",
+                                "author",
+                            ],
+                        )
+                        .with_hybrid(query=query.query, alpha=0.5, vector=query.embedding)
+                        .with_limit(query.top_k)  # type: ignore
+                        .with_additional(["score"])  # Removed "vector"
+                        .do()
                     )
-                    .with_hybrid(query=query.query, alpha=0.5, vector=query.embedding)
-                    .with_limit(query.top_k)  # type: ignore
-                    .with_additional(["score"])  # Removed "vector"
-                    .do()
-                )
+                    
             else:
                 filters_ = self.build_filters(query.filter)
                 if query.query:  # Added this check
@@ -239,25 +241,11 @@ class WeaviateDataStore(DataStore):
                         .with_additional(["score"])  # Removed "vector"
                         .do()
                     )
-                else:  # Added this branch to handle cases where a query is not provided
-                    result = (
-                        self.client.query.get(
-                            WEAVIATE_CLASS,
-                            [
-                                "chunk_id",
-                                "document_id",
-                                "text",
-                                "source",
-                                "source_id",
-                                "url",
-                                "created_at",
-                                "author",
-                            ],
-                        )
-                        .with_where(filters_)
-                        .with_limit(query.top_k)  # type: ignore
-                        .with_additional(["score"])  # Removed "vector"
-                        .do()
+                elif query.filter.document_id:  # Check if only document_id is provided
+                    result = self.client.data_object.get_by_id(
+                        query.filter.document_id,
+                        class_name=WEAVIATE_CLASS,
+                        consistency_level=weaviate.data.replication.ConsistencyLevel.ONE,
                     )
 
             query_results: List[DocumentChunkWithScore] = []
