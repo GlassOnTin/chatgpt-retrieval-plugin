@@ -296,7 +296,7 @@ class WeaviateDataStore(DataStore):
 
         if ids:
             operands = [
-                {"path": ["id"], "operator": "Equal", "valueString": id}
+                {"path": ["document_id"], "operator": "Equal", "valueString": id}
                 for id in ids
             ]
 
