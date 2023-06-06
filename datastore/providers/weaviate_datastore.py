@@ -277,15 +277,22 @@ class WeaviateDataStore(DataStore):
         filter: Optional[DocumentMetadataFilter] = None,
         delete_all: Optional[bool] = None,
     ) -> bool:
-        # TODO
         """
         Removes vectors by ids, filter, or everything in the datastore.
         Returns whether the operation was successful.
         """
         if delete_all:
             logger.debug(f"Deleting all vectors in index {WEAVIATE_CLASS}")
-            self.client.schema.delete_all()
+            try:
+                self.client.schema.delete_all()
+            except Exception as e:
+                logger.error(f"Failed to delete all vectors: {e}")
+                return False
             return True
+
+        if ids is None and filter is None and not delete_all:
+            logger.error("No ids or filter provided for deletion and delete_all is not set. Aborting.")
+            return False
 
         if ids:
             operands = [
@@ -296,14 +303,19 @@ class WeaviateDataStore(DataStore):
             where_clause = {"operator": "Or", "operands": operands}
 
             logger.debug(f"Deleting vectors from index {WEAVIATE_CLASS} with ids {ids}")
-            result = self.client.batch.delete_objects(
-                class_name=WEAVIATE_CLASS, where=where_clause, output="verbose"
-            )
+            try:
+                result = self.client.batch.delete_objects(
+                    class_name=WEAVIATE_CLASS, where=where_clause, output="verbose"
+                )
+            except Exception as e:
+                logger.error(f"Failed to delete vectors with ids {ids}: {e}")
+                return False
 
             if not bool(result["results"]["successful"]):
-                logger.debug(
+                logger.error(
                     f"Failed to delete the following objects: {result['results']['objects']}"
                 )
+                return False
 
         if filter:
             where_clause = self.build_filters(filter)
@@ -311,14 +323,20 @@ class WeaviateDataStore(DataStore):
             logger.debug(
                 f"Deleting vectors from index {WEAVIATE_CLASS} with filter {where_clause}"
             )
-            result = self.client.batch.delete_objects(
-                class_name=WEAVIATE_CLASS, where=where_clause
-            )
+            try:
+                result = self.client.batch.delete_objects(
+                    class_name=WEAVIATE_CLASS, where=where_clause
+                )
+            except Exception as e:
+                logger.error(f"Failed to delete vectors with filter {where_clause}: {e}")
+                return False
 
             if not bool(result["results"]["successful"]):
-                logger.debug(
+                logger.error(
                     f"Failed to delete the following objects: {result['results']['objects']}"
                 )
+                return False
+
         return True
 
     @staticmethod
