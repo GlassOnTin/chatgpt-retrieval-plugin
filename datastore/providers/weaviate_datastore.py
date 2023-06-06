@@ -195,49 +195,70 @@ class WeaviateDataStore(DataStore):
         """
 
         async def _single_query(query: QueryWithEmbedding) -> QueryResult:
-            logger.debug(f"Query: {query.query}")
-            if not hasattr(query, "filter") or not query.filter:
-                result = (
-                    self.client.query.get(
-                        WEAVIATE_CLASS,
-                        [
-                            "chunk_id",
-                            "document_id",
-                            "text",
-                            "source",
-                            "source_id",
-                            "url",
-                            "created_at",
-                            "author",
-                        ],
-                    )
-                    .with_hybrid(query=query.query, alpha=0.5, vector=query.embedding)
-                    .with_limit(query.top_k)  # type: ignore
-                    .with_additional(["score"])  #, "vector"])
-                    .do()
+    logger.debug(f"Query: {query.query}")
+    if not hasattr(query, "filter") or not query.filter:
+        result = (
+            self.client.query.get(
+                WEAVIATE_CLASS,
+                [
+                    "chunk_id",
+                    "document_id",
+                    "text",
+                    "source",
+                    "source_id",
+                    "url",
+                    "created_at",
+                    "author",
+                ],
+            )
+            .with_hybrid(query=query.query, alpha=0.5, vector=query.embedding)
+            .with_limit(query.top_k)  # type: ignore
+            .with_additional(["score"])  # Removed "vector"
+            .do()
+        )
+    else:
+        filters_ = self.build_filters(query.filter)
+        if query.query:  # Added this check
+            result = (
+                self.client.query.get(
+                    WEAVIATE_CLASS,
+                    [
+                        "chunk_id",
+                        "document_id",
+                        "text",
+                        "source",
+                        "source_id",
+                        "url",
+                        "created_at",
+                        "author",
+                    ],
                 )
-            else:
-                filters_ = self.build_filters(query.filter)
-                result = (
-                    self.client.query.get(
-                        WEAVIATE_CLASS,
-                        [
-                            "chunk_id",
-                            "document_id",
-                            "text",
-                            "source",
-                            "source_id",
-                            "url",
-                            "created_at",
-                            "author",
-                        ],
-                    )
-                    .with_hybrid(query=query.query, alpha=0.5, vector=query.embedding)
-                    .with_where(filters_)
-                    .with_limit(query.top_k)  # type: ignore
-                    .with_additional(["score"]) #, "vector"])
-                    .do()
+                .with_hybrid(query=query.query, alpha=0.5, vector=query.embedding)
+                .with_where(filters_)
+                .with_limit(query.top_k)  # type: ignore
+                .with_additional(["score"])  # Removed "vector"
+                .do()
+            )
+        else:  # Added this branch to handle cases where a query is not provided
+            result = (
+                self.client.query.get(
+                    WEAVIATE_CLASS,
+                    [
+                        "chunk_id",
+                        "document_id",
+                        "text",
+                        "source",
+                        "source_id",
+                        "url",
+                        "created_at",
+                        "author",
+                    ],
                 )
+                .with_where(filters_)
+                .with_limit(query.top_k)  # type: ignore
+                .with_additional(["score"])  # Removed "vector"
+                .do()
+            )
 
             query_results: List[DocumentChunkWithScore] = []
             response = result["data"]["Get"][WEAVIATE_CLASS]
