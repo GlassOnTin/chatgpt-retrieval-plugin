@@ -15,7 +15,7 @@ class DocumentMetadata(BaseModel):
     url: Optional[str] = None
     created_at: Optional[str] = None
     author: Optional[str] = None
-
+    document_id: Optional[str] = None 
 
 class DocumentChunkMetadata(DocumentMetadata):
     document_id: Optional[str] = None
