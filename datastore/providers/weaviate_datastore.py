@@ -303,6 +303,7 @@ class WeaviateDataStore(DataStore):
             where_clause = {"operator": "Or", "operands": operands}
 
             logger.debug(f"Deleting vectors from index {WEAVIATE_CLASS} with ids {ids}")
+            logger.debug(f"Where clause: {where_clause}")
             try:
                 result = self.client.batch.delete_objects(
                     class_name=WEAVIATE_CLASS, where=where_clause, output="verbose"
@@ -325,12 +326,13 @@ class WeaviateDataStore(DataStore):
             logger.debug(
                 f"Deleting vectors from index {WEAVIATE_CLASS} with filter {where_clause}"
             )
+            logger.debug(f"Where clause: {where_clause}")
             try:
                 result = self.client.batch.delete_objects(
                     class_name=WEAVIATE_CLASS, where=where_clause
                 )
                 logger.debug(f"Delete result: {result}")
-                
+
             except Exception as e:
                 logger.error(f"Failed to delete vectors with filter {where_clause}: {e}")
                 return False
