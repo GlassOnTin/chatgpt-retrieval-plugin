@@ -454,13 +454,13 @@ class WeaviateDataStore(DataStore):
             )
             return True
 
-     async def delete_reference(
+    async def delete_reference(
         self,
         from_id: str,
         reference_name: str,
         to_id: str,
         consistency_level: weaviate.data.replication.ConsistencyLevel = weaviate.data.replication.ConsistencyLevel.ALL,
-    ) -> bool:
+     ) -> bool:
         """
         Deletes a cross-reference between two documents.
 
