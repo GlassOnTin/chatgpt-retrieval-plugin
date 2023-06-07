@@ -174,7 +174,7 @@ async def delete(
         print("Error:", e)
         raise HTTPException(status_code=500, detail="Internal Service Error")
 
-@sub_app.post(
+@app.post(
     "/add_reference",
     response_model=ReferenceResponse,
     description="Adds a two-way cross-reference between two documents.",
@@ -195,7 +195,7 @@ async def add_reference(
         print("Error:", e)
         raise HTTPException(status_code=500, detail="Internal Service Error")
 
-@sub_app.post(
+@app.post(
     "/delete_reference",
     response_model=ReferenceResponse,
     description="Deletes a two-way cross-reference between two documents.",
