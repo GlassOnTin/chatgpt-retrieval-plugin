@@ -81,7 +81,7 @@ SCHEMA = {
             "name": "refersTo",
             "dataType": [WEAVIATE_CLASS],
             "description": "A reference to another Document",
-        }
+        },
         {
             "name": "referredBy",
             "dataType": [WEAVIATE_CLASS],
