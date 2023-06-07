@@ -32,3 +32,18 @@ class DeleteRequest(BaseModel):
 
 class DeleteResponse(BaseModel):
     success: bool
+        
+class AddReferenceRequest(BaseModel):
+    from_id: str
+    to_id: str
+    from_reference_name: str
+    to_reference_name: str
+
+class DeleteReferenceRequest(BaseModel):
+    from_id: str
+    to_id: str
+    from_reference_name: str
+    to_reference_name: str
+
+class ReferenceResponse(BaseModel):
+    success: bool

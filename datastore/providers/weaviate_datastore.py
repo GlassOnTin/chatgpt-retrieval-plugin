@@ -277,15 +277,22 @@ class WeaviateDataStore(DataStore):
         filter: Optional[DocumentMetadataFilter] = None,
         delete_all: Optional[bool] = None,
     ) -> bool:
-        # TODO
         """
         Removes vectors by ids, filter, or everything in the datastore.
         Returns whether the operation was successful.
         """
         if delete_all:
             logger.debug(f"Deleting all vectors in index {WEAVIATE_CLASS}")
-            self.client.schema.delete_all()
+            try:
+                self.client.schema.delete_all()
+            except Exception as e:
+                logger.error(f"Failed to delete all vectors: {e}")
+                return False
             return True
+
+        if ids is None and filter is None and not delete_all:
+            logger.error("No ids or filter provided for deletion and delete_all is not set. Aborting.")
+            return False
 
         if ids:
             operands = [
@@ -296,14 +303,22 @@ class WeaviateDataStore(DataStore):
             where_clause = {"operator": "Or", "operands": operands}
 
             logger.debug(f"Deleting vectors from index {WEAVIATE_CLASS} with ids {ids}")
-            result = self.client.batch.delete_objects(
-                class_name=WEAVIATE_CLASS, where=where_clause, output="verbose"
-            )
+            logger.debug(f"Where clause: {where_clause}")
+            try:
+                result = self.client.batch.delete_objects(
+                    class_name=WEAVIATE_CLASS, where=where_clause, output="verbose"
+                )
+                logger.debug(f"Delete result: {result}")
+
+            except Exception as e:
+                logger.error(f"Failed to delete vectors with ids {ids}: {e}")
+                return False
 
             if not bool(result["results"]["successful"]):
-                logger.debug(
+                logger.error(
                     f"Failed to delete the following objects: {result['results']['objects']}"
                 )
+                return False
 
         if filter:
             where_clause = self.build_filters(filter)
@@ -311,14 +326,22 @@ class WeaviateDataStore(DataStore):
             logger.debug(
                 f"Deleting vectors from index {WEAVIATE_CLASS} with filter {where_clause}"
             )
-            result = self.client.batch.delete_objects(
-                class_name=WEAVIATE_CLASS, where=where_clause
-            )
+            logger.debug(f"Where clause: {where_clause}")
+            try:
+                result = self.client.batch.delete_objects(
+                    class_name=WEAVIATE_CLASS, where=where_clause
+                )
+                logger.debug(f"Delete result: {result}")
+
+            except Exception as e:
+                logger.error(f"Failed to delete vectors with filter {where_clause}: {e}")
+                return False
 
             if not bool(result["results"]["successful"]):
-                logger.debug(
+                logger.error(
                     f"Failed to delete the following objects: {result['results']['objects']}"
                 )
+                return False
 
         return True
 
@@ -357,10 +380,94 @@ class WeaviateDataStore(DataStore):
                     value_key: value,
                 }
 
+                logger.debug(f"Operand: {operand}")
                 operands.append(operand)
 
         return {"operator": "And", "operands": operands}
+    
+    async def add_reference(
+        self,
+        from_id: str,
+        to_id: str,
+        from_reference_name: str,
+        to_reference_name: str,
+        consistency_level: weaviate.data.replication.ConsistencyLevel = weaviate.data.replication.ConsistencyLevel.ALL,
+    ) -> bool:
+        """
+        Adds a two-way cross-reference between two documents.
 
+        :param from_id: The ID of the document from which the first reference originates.
+        :param to_id: The ID of the document from which the second reference originates.
+        :param from_reference_name: The name of the first reference.
+        :param to_reference_name: The name of the second reference.
+        :param consistency_level: The consistency level for the operation. Default is ALL.
+        :return: True if the operation was successful, False otherwise.
+        """
+        try:
+            # Add the first reference
+            self.client.data_object.reference.add(
+                from_id,
+                from_reference_name,
+                to_id,
+                from_class_name=WEAVIATE_CLASS,
+                to_class_name=WEAVIATE_CLASS,
+                consistency_level=consistency_level,
+            )
+            # Add the second reference
+            self.client.data_object.reference.add(
+                to_id,
+                to_reference_name,
+                from_id,
+                from_class_name=WEAVIATE_CLASS,
+                to_class_name=WEAVIATE_CLASS,
+                consistency_level=consistency_level,
+            )
+            return True
+        except Exception as e:
+            logger.error(f"Failed to add two-way reference between {from_id} and {to_id}: {e}")
+            return False
+
+    async def delete_reference(
+        self,
+        from_id: str,
+        to_id: str,
+        from_reference_name: str,
+        to_reference_name: str,
+        consistency_level: weaviate.data.replication.ConsistencyLevel = weaviate.data.replication.ConsistencyLevel.ALL,
+    ) -> bool:
+        """
+        Deletes a two-way cross-reference between two documents.
+
+        :param from_id: The ID of the document from which the first reference originates.
+        :param to_id: The ID of the document from which the second reference originates.
+        :param from_reference_name: The name of the first reference.
+        :param to_reference_name: The name of the second reference.
+        :param consistency_level: The consistency level for the operation. Default is ALL.
+        :return: True if the operation was successful, False otherwise.
+        """
+        try:
+            # Delete the first reference
+            self.client.data_object.reference.delete(
+                from_id,
+                from_reference_name,
+                to_id,
+                from_class_name=WEAVIATE_CLASS,
+                to_class_name=WEAVIATE_CLASS,
+                consistency_level=consistency_level,
+            )
+            # Delete the second reference
+            self.client.data_object.reference.delete(
+                to_id,
+                to_reference_name,
+                from_id,
+                from_class_name=WEAVIATE_CLASS,
+                to_class_name=WEAVIATE_CLASS,
+                consistency_level=consistency_level,
+            )
+            return True
+        except Exception as e:
+            logger.error(f"Failed to delete two-way reference between {from_id} and {to_id}: {e}")
+            return False
 
     @staticmethod
     def _is_valid_weaviate_id(candidate_id: str) -> bool:
