@@ -77,6 +77,16 @@ SCHEMA = {
             "dataType": ["string"],
             "description": "Document author",
         },
+        {
+            "name": "refersTo",
+            "dataType": [WEAVIATE_CLASS],
+            "description": "A reference to another Document",
+        }
+        {
+            "name": "referredBy",
+            "dataType": [WEAVIATE_CLASS],
+            "description": "A reference from another Document",
+        }
     ],
 }
 
