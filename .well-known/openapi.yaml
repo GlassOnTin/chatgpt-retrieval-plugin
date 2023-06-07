@@ -84,6 +84,59 @@ paths:
                 $ref: "#/components/schemas/HTTPValidationError"
       security:
         - HTTPBearer: []
+  /add_reference:
+    post:
+      summary: Add Reference
+      description: Adds a cross-reference between two documents.
+      operationId: add_reference_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddReferenceRequest"
+        required: true
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AddReferenceResponse"
+        "422":
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+      security:
+        - HTTPBearer: []
+
+  /delete_reference:
+    post:
+      summary: Delete Reference
+      description: Deletes a cross-reference between two documents.
+      operationId: delete_reference_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeleteReferenceRequest"
+        required: true
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteReferenceResponse"
+        "422":
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+      security:
+        - HTTPBearer: []
 components:
   schemas:
     Document:
@@ -317,6 +370,58 @@ components:
         type:
           title: Error Type
           type: string
+    AddReferenceRequest:
+      title: AddReferenceRequest
+      required:
+        - from_id
+        - reference_name
+        - to_id
+      type: object
+      properties:
+        from_id:
+          title: From ID
+          type: string
+        reference_name:
+          title: Reference Name
+          type: string
+        to_id:
+          title: To ID
+          type: string
+    AddReferenceResponse:
+      title: AddReferenceResponse
+      required:
+        - success
+      type: object
+      properties:
+        success:
+          title: Success
+          type: boolean
+    DeleteReferenceRequest:
+      title: DeleteReferenceRequest
+      required:
+        - from_id
+        - reference_name
+        - to_id
+      type: object
+      properties:
+        from_id:
+          title: From ID
+          type: string
+        reference_name:
+          title: Reference Name
+          type: string
+        to_id:
+          title: To ID
+          type: string
+    DeleteReferenceResponse:
+      title: DeleteReferenceResponse
+      required:
+        - success
+      type: object
+      properties:
+        success:
+          title: Success
+          type: boolean
   securitySchemes:
     HTTPBearer:
       type: http
