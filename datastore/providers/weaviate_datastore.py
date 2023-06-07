@@ -385,6 +385,66 @@ class WeaviateDataStore(DataStore):
 
         return {"operator": "And", "operands": operands}
     
+    async def add_reference(
+        self,
+        from_id: str,
+        reference_name: str,
+        to_id: str,
+        consistency_level: weaviate.data.replication.ConsistencyLevel = weaviate.data.replication.ConsistencyLevel.ALL,
+    ) -> bool:
+        """
+        Adds a cross-reference between two documents.
+
+        :param from_id: The ID of the document from which the reference originates.
+        :param reference_name: The name of the reference.
+        :param to_id: The ID of the document to which the reference points.
+        :param consistency_level: The consistency level for the operation. Default is ALL.
+        :return: True if the operation was successful, False otherwise.
+        """
+        try:
+            self.client.data_object.reference.add(
+                from_id,
+                reference_name,
+                to_id,
+                from_class_name=WEAVIATE_CLASS,
+                to_class_name=WEAVIATE_CLASS,
+                consistency_level=consistency_level,
+            )
+            return True
+        except Exception as e:
+            logger.error(f"Failed to add reference from {from_id} to {to_id}: {e}")
+            return False
+
+     async def delete_reference(
+        self,
+        from_id: str,
+        reference_name: str,
+        to_id: str,
+        consistency_level: weaviate.data.replication.ConsistencyLevel = weaviate.data.replication.ConsistencyLevel.ALL,
+    ) -> bool:
+        """
+        Deletes a cross-reference between two documents.
+
+        :param from_id: The ID of the document from which the reference originates.
+        :param reference_name: The name of the reference.
+        :param to_id: The ID of the document to which the reference points.
+        :param consistency_level: The consistency level for the operation. Default is ALL.
+        :return: True if the operation was successful, False otherwise.
+        """
+        try:
+            self.client.data_object.reference.delete(
+                from_id,
+                reference_name,
+                to_id,
+                from_class_name=WEAVIATE_CLASS,
+                to_class_name=WEAVIATE_CLASS,
+                consistency_level=consistency_level,
+            )
+            return True
+        except Exception as e:
+            logger.error(f"Failed to add reference from {from_id} to {to_id}: {e}")
+            return False
+        
     @staticmethod
     def _is_valid_weaviate_id(candidate_id: str) -> bool:
         """
