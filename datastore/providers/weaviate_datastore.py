@@ -149,12 +149,8 @@ class WeaviateDataStore(DataStore):
             logger.debug("Will reuse this schema")
 
     def class_exists(self, class_name):
-        try:
-            self.client.schema.get_class(class_name)
-            return True
-        except weaviate.exceptions.DoesNotExistException:
-            return False
-
+        schema = self.client.schema.get()
+        return class_name in schema['classes']
 
     @staticmethod
     def _build_auth_credentials():
