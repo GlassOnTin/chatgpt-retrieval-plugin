@@ -395,14 +395,8 @@ class WeaviateDataStore(DataStore):
     ) -> bool:
         """
         Adds a two-way cross-reference between two documents.
-
-        :param from_id: The ID of the document from which the first reference originates.
-        :param to_id: The ID of the document from which the second reference originates.
-        :param from_reference_name: The name of the first reference.
-        :param to_reference_name: The name of the second reference.
-        :param consistency_level: The consistency level for the operation. Default is ALL.
-        :return: True if the operation was successful, False otherwise.
         """
+        logger.debug(f"Adding reference from {from_id} to {to_id} with reference names {from_reference_name} and {to_reference_name}")
         try:
             # Add the first reference
             self.client.data_object.reference.add(
@@ -437,14 +431,8 @@ class WeaviateDataStore(DataStore):
     ) -> bool:
         """
         Deletes a two-way cross-reference between two documents.
-
-        :param from_id: The ID of the document from which the first reference originates.
-        :param to_id: The ID of the document from which the second reference originates.
-        :param from_reference_name: The name of the first reference.
-        :param to_reference_name: The name of the second reference.
-        :param consistency_level: The consistency level for the operation. Default is ALL.
-        :return: True if the operation was successful, False otherwise.
         """
+        logger.debug(f"Deleting reference from {from_id} to {to_id} with reference names {from_reference_name} and {to_reference_name}")
         try:
             # Delete the first reference
             self.client.data_object.reference.delete(
