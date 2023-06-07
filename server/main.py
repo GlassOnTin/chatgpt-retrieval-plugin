@@ -16,6 +16,9 @@ from models.api import (
     QueryResponse,
     UpsertRequest,
     UpsertResponse,
+    AddReferenceRequest, 
+    DeleteReferenceRequest, 
+    ReferenceResponse
 )
 from datastore.factory import get_datastore
 from services.file import get_document_from_file
@@ -171,6 +174,47 @@ async def delete(
         print("Error:", e)
         raise HTTPException(status_code=500, detail="Internal Service Error")
 
+@sub_app.post(
+    "/add_reference",
+    response_model=ReferenceResponse,
+    description="Adds a two-way cross-reference between two documents.",
+)
+async def add_reference(
+    request: AddReferenceRequest = Body(...),
+    token: HTTPAuthorizationCredentials = Depends(validate_token),
+):
+    try:
+        success = await datastore.add_reference(
+            from_id=request.from_id,
+            to_id=request.to_id,
+            from_reference_name=request.from_reference_name,
+            to_reference_name=request.to_reference_name,
+        )
+        return ReferenceResponse(success=success)
+    except Exception as e:
+        print("Error:", e)
+        raise HTTPException(status_code=500, detail="Internal Service Error")
+
+@sub_app.post(
+    "/delete_reference",
+    response_model=ReferenceResponse,
+    description="Deletes a two-way cross-reference between two documents.",
+)
+async def delete_reference(
+    request: DeleteReferenceRequest = Body(...),
+    token: HTTPAuthorizationCredentials = Depends(validate_token),
+):
+    try:
+        success = await datastore.delete_reference(
+            from_id=request.from_id,
+            to_id=request.to_id,
+            from_reference_name=request.from_reference_name,
+            to_reference_name=request.to_reference_name,
+        )
+        return ReferenceResponse(success=success)
+    except Exception as e:
+        print("Error:", e)
+        raise HTTPException(status_code=500, detail="Internal Service Error")
 
 @app.on_event("startup")
 async def startup():
