@@ -133,7 +133,13 @@ class WeaviateDataStore(DataStore):
             num_workers=WEAVIATE_BATCH_NUM_WORKERS,
         )
 
-        if self.client.schema.contains(SCHEMA):
+        if not self.class_exists(WEAVIATE_CLASS):
+            new_schema_properties = extract_schema_properties(SCHEMA)
+            logger.debug(
+                f"Creating collection {WEAVIATE_CLASS} with properties {new_schema_properties}"
+            )
+            self.client.schema.create_class(SCHEMA)
+        else:
             current_schema = self.client.schema.get(WEAVIATE_CLASS)
             current_schema_properties = extract_schema_properties(current_schema)
 
@@ -141,12 +147,14 @@ class WeaviateDataStore(DataStore):
                 f"Found index {WEAVIATE_CLASS} with properties {current_schema_properties}"
             )
             logger.debug("Will reuse this schema")
-        else:
-            new_schema_properties = extract_schema_properties(SCHEMA)
-            logger.debug(
-                f"Creating collection {WEAVIATE_CLASS} with properties {new_schema_properties}"
-            )
-            self.client.schema.create_class(SCHEMA)
+
+    def class_exists(self, class_name):
+        try:
+            self.client.schema.get_class(class_name)
+            return True
+        except weaviate.exceptions.DoesNotExistException:
+            return False
+
 
     @staticmethod
     def _build_auth_credentials():
