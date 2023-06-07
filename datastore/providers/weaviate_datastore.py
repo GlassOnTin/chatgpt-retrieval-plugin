@@ -484,6 +484,48 @@ class WeaviateDataStore(DataStore):
             logger.error(f"Failed to add reference from {from_id} to {to_id}: {e}")
             return False
         
+    async def delete_two_way_reference(
+        self,
+        from_id: str,
+        to_id: str,
+        from_reference_name: str,
+        to_reference_name: str,
+        consistency_level: weaviate.data.replication.ConsistencyLevel = weaviate.data.replication.ConsistencyLevel.ALL,
+    ) -> bool:
+        """
+        Deletes a two-way cross-reference between two documents.
+
+        :param from_id: The ID of the document from which the first reference originates.
+        :param to_id: The ID of the document from which the second reference originates.
+        :param from_reference_name: The name of the first reference.
+        :param to_reference_name: The name of the second reference.
+        :param consistency_level: The consistency level for the operation. Default is ALL.
+        :return: True if the operation was successful, False otherwise.
+        """
+        try:
+            # Delete the first reference
+            self.client.data_object.reference.delete(
+                from_id,
+                from_reference_name,
+                to_id,
+                from_class_name=WEAVIATE_CLASS,
+                to_class_name=WEAVIATE_CLASS,
+                consistency_level=consistency_level,
+            )
+            # Delete the second reference
+            self.client.data_object.reference.delete(
+                to_id,
+                to_reference_name,
+                from_id,
+                from_class_name=WEAVIATE_CLASS,
+                to_class_name=WEAVIATE_CLASS,
+                consistency_level=consistency_level,
+            )
+            return True
+        except Exception as e:
+            logger.error(f"Failed to delete two-way reference between {from_id} and {to_id}: {e}")
+            return False
+        
     @staticmethod
     def _is_valid_weaviate_id(candidate_id: str) -> bool:
         """
