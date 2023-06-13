@@ -131,7 +131,7 @@ class WeaviateDataStore(DataStore):
         )
 
         schema = self.client.schema.get(WEAVIATE_CLASS)
-        if not self.class_exists(WEAVIATE_CLASS):
+        if not schema:
             new_schema_properties = extract_schema_properties(SCHEMA)
             logger.debug(
                 f"Creating collection {WEAVIATE_CLASS} with properties {new_schema_properties}"
