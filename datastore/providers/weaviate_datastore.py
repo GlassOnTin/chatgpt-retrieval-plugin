@@ -1,4 +1,3 @@
-# TODO
 import asyncio
 from typing import Dict, List, Optional
 from loguru import logger
@@ -93,9 +92,7 @@ SCHEMA = {
 
 def extract_schema_properties(schema):
     properties = schema["properties"]
-
     return {property["name"] for property in properties}
-
 
 class WeaviateDataStore(DataStore):
     def handle_errors(self, results: Optional[List[dict]]) -> List[str]:
@@ -133,6 +130,7 @@ class WeaviateDataStore(DataStore):
             num_workers=WEAVIATE_BATCH_NUM_WORKERS,
         )
 
+        schema = self.client.schema.get(WEAVIATE_CLASS)
         if not self.class_exists(WEAVIATE_CLASS):
             new_schema_properties = extract_schema_properties(SCHEMA)
             logger.debug(
@@ -140,17 +138,13 @@ class WeaviateDataStore(DataStore):
             )
             self.client.schema.create_class(SCHEMA)
         else:
-            current_schema = self.client.schema.get(WEAVIATE_CLASS)
+            current_schema = schema
             current_schema_properties = extract_schema_properties(current_schema)
 
             logger.debug(
                 f"Found index {WEAVIATE_CLASS} with properties {current_schema_properties}"
             )
             logger.debug("Will reuse this schema")
-
-    def class_exists(self, class_name):
-        schema = self.client.schema.get()
-        return class_name in schema['classes']
 
     @staticmethod
     def _build_auth_credentials():
