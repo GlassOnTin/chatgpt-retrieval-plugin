@@ -87,7 +87,7 @@ paths:
   /add_reference:
     post:
       summary: Add Reference
-      description: Adds a cross-reference between two documents.
+      description: Adds a cross-reference between two document properties.
       operationId: add_reference_post
       requestBody:
         content:
@@ -114,7 +114,7 @@ paths:
   /delete_reference:
     post:
       summary: Delete Reference
-      description: Deletes a cross-reference between two documents.
+      description: Deletes a cross-reference between two documents properties.
       operationId: delete_reference_post
       requestBody:
         content:

@@ -1,3 +1,4 @@
+# TODO
 import asyncio
 from typing import Dict, List, Optional
 from loguru import logger
@@ -92,7 +93,9 @@ SCHEMA = {
 
 def extract_schema_properties(schema):
     properties = schema["properties"]
+
     return {property["name"] for property in properties}
+
 
 class WeaviateDataStore(DataStore):
     def handle_errors(self, results: Optional[List[dict]]) -> List[str]:
@@ -397,32 +400,32 @@ class WeaviateDataStore(DataStore):
         self,
         from_id: str,
         to_id: str,
-        from_reference_name: str,
-        to_reference_name: str,
+        from_property_name: str,
+        to_property_name: str,
         consistency_level: weaviate.data.replication.ConsistencyLevel = weaviate.data.replication.ConsistencyLevel.ALL,
     ) -> bool:
         """
-        Adds a two-way cross-reference between two documents.
+        Adds a two-way cross-reference between two documents properties
         """
-        logger.debug(f"Adding reference from {from_id} to {to_id} with reference names {from_reference_name} and {to_reference_name}")
+        logger.debug(f"Adding reference from {from_id}/{from_property_name} to {to_id}/{to_property_name}")
         try:
             # Add the first reference
             self.client.data_object.reference.add(
-                from_id,
-                from_reference_name,
-                to_id,
+                from_uuid=from_id,
+                from_property_name=from_property_name,
+                to_uuid=to_id,
                 from_class_name=WEAVIATE_CLASS,
                 to_class_name=WEAVIATE_CLASS,
-                consistency_level=consistency_level,
+                consistency_level=consistency_level
             )
             # Add the second reference
             self.client.data_object.reference.add(
-                to_id,
-                to_reference_name,
-                from_id,
+                from_uuid=to_id,
+                from_property_name=to_property_name,
+                to_uuid=from_id,
                 from_class_name=WEAVIATE_CLASS,
                 to_class_name=WEAVIATE_CLASS,
-                consistency_level=consistency_level,
+                consistency_level=consistency_level
             )
             return True
         except Exception as e:
@@ -433,19 +436,19 @@ class WeaviateDataStore(DataStore):
         self,
         from_id: str,
         to_id: str,
-        from_reference_name: str,
-        to_reference_name: str,
+        from_property_name: str,
+        to_property_name: str,
         consistency_level: weaviate.data.replication.ConsistencyLevel = weaviate.data.replication.ConsistencyLevel.ALL,
     ) -> bool:
         """
         Deletes a two-way cross-reference between two documents.
         """
-        logger.debug(f"Deleting reference from {from_id} to {to_id} with reference names {from_reference_name} and {to_reference_name}")
+        logger.debug(f"Deleting reference from {from_id}/{from_property_name} to {to_id}/{to_property_name}")
         try:
             # Delete the first reference
             self.client.data_object.reference.delete(
                 from_id,
-                from_reference_name,
+                from_property_name,
                 to_id,
                 from_class_name=WEAVIATE_CLASS,
                 to_class_name=WEAVIATE_CLASS,
@@ -454,7 +457,7 @@ class WeaviateDataStore(DataStore):
             # Delete the second reference
             self.client.data_object.reference.delete(
                 to_id,
-                to_reference_name,
+                to_property_name,
                 from_id,
                 from_class_name=WEAVIATE_CLASS,
                 to_class_name=WEAVIATE_CLASS,

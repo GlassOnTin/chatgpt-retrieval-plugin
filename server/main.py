@@ -177,7 +177,7 @@ async def delete(
 @app.post(
     "/add_reference",
     response_model=ReferenceResponse,
-    description="Adds a two-way cross-reference between two documents.",
+    description="Adds a two-way cross-reference between two document properties",
 )
 async def add_reference(
     request: AddReferenceRequest = Body(...),
@@ -187,8 +187,8 @@ async def add_reference(
         success = await datastore.add_reference(
             from_id=request.from_id,
             to_id=request.to_id,
-            from_reference_name=request.from_reference_name,
-            to_reference_name=request.to_reference_name,
+            from_property_name=request.from_property_name,
+            to_property_name=request.to_property_name,
         )
         return ReferenceResponse(success=success)
     except Exception as e:
@@ -198,7 +198,7 @@ async def add_reference(
 @app.post(
     "/delete_reference",
     response_model=ReferenceResponse,
-    description="Deletes a two-way cross-reference between two documents.",
+    description="Deletes a two-way cross-reference between two documents properties.",
 )
 async def delete_reference(
     request: DeleteReferenceRequest = Body(...),
@@ -208,8 +208,8 @@ async def delete_reference(
         success = await datastore.delete_reference(
             from_id=request.from_id,
             to_id=request.to_id,
-            from_reference_name=request.from_reference_name,
-            to_reference_name=request.to_reference_name,
+            from_property_name=request.from_property_name,
+            to_property_name=request.to_property_name,
         )
         return ReferenceResponse(success=success)
     except Exception as e:
