@@ -133,7 +133,11 @@ class WeaviateDataStore(DataStore):
             num_workers=WEAVIATE_BATCH_NUM_WORKERS,
         )
 
-        schema = self.client.schema.get(WEAVIATE_CLASS)
+        try:            
+            schema = self.client.schema.get(WEAVIATE_CLASS)
+        except weaviate.exceptions.UnexpectedStatusCodeException:
+            schema = None            
+
         if not schema:
             new_schema_properties = extract_schema_properties(SCHEMA)
             logger.debug(
