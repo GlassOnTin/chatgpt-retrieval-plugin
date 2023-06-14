@@ -384,8 +384,9 @@ components:
       title: AddReferenceRequest
       required:
         - from_id
-        - property_name
-        - to_id
+        - to_id        
+        - from_property_name
+        - to_property_name
       type: object
       properties:
         from_id:
@@ -410,11 +411,12 @@ components:
           title: Success
           type: boolean
     DeleteReferenceRequest:
-      title: DeleteReferenceRequest
+      title: DeleteReferenceRequest      
       required:
         - from_id
-        - property_name
-        Property Name
+        - to_id        
+        - from_property_name
+        - to_property_name
       type: object
       properties:
         from_id:
