@@ -384,18 +384,21 @@ components:
       title: AddReferenceRequest
       required:
         - from_id
-        - reference_name
+        - property_name
         - to_id
       type: object
       properties:
         from_id:
           title: From ID
           type: string
-        reference_name:
-          title: Reference Name
-          type: string
         to_id:
           title: To ID
+          type: string
+        from_property_name:
+          title: From Property Name
+          type: string
+        to_property_name:
+          title: To Property Name
           type: string
     AddReferenceResponse:
       title: AddReferenceResponse
@@ -410,18 +413,21 @@ components:
       title: DeleteReferenceRequest
       required:
         - from_id
-        - reference_name
-        - to_id
+        - property_name
+        Property Name
       type: object
       properties:
         from_id:
           title: From ID
           type: string
-        reference_name:
-          title: Reference Name
-          type: string
         to_id:
           title: To ID
+          type: string
+        from_property_name:
+          title: From Property Name
+          type: string
+        to_property_name:
+          title: To Property Name
           type: string
     DeleteReferenceResponse:
       title: DeleteReferenceResponse
