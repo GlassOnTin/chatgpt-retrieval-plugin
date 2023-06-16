@@ -223,9 +223,9 @@ class WeaviateDataStore(DataStore):
                                 "source_id",
                                 "url",
                                 "created_at",
-                                "author",
-                                "refersTo",
-                                "referredBy"
+                                "author"
+                                #"refersTo",
+                                #"referredBy"
                             ],
                         )
                         .with_hybrid(query=query.query, alpha=0.5, vector=query.embedding)
@@ -248,9 +248,9 @@ class WeaviateDataStore(DataStore):
                                 "source_id",
                                 "url",
                                 "created_at",
-                                "author",
-                                "refersTo",
-                                "referredBy"
+                                "author"
+                                #"refersTo",
+                                #"referredBy"
                             ],
                         )
                         .with_hybrid(query=query.query, alpha=0.5, vector=query.embedding)
