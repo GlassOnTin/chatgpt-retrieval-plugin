@@ -153,16 +153,6 @@ components:
           type: string
         metadata:
           $ref: "#/components/schemas/DocumentMetadata"
-        refersTo:
-          title: Refers To
-          type: array
-          items:
-            type: string
-        referredBy:
-          title: Referred By
-          type: array
-          items:
-            type: string
     DocumentChunkMetadata:
       title: DocumentChunkMetadata
       type: object
