@@ -384,9 +384,7 @@ components:
       title: AddReferenceRequest
       required:
         - from_id
-        - to_id        
-        - from_property_name
-        - to_property_name
+        - to_id
       type: object
       properties:
         from_id:
@@ -415,8 +413,6 @@ components:
       required:
         - from_id
         - to_id        
-        - from_property_name
-        - to_property_name
       type: object
       properties:
         from_id:
