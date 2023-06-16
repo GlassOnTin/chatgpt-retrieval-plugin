@@ -281,9 +281,9 @@ class WeaviateDataStore(DataStore):
                         source_id=resp["source_id"],
                         url=resp["url"],
                         created_at=resp["created_at"],
-                        author=resp["author"],
-                        refers_to=["refersTo"],
-                        referred_by=["referredBy"]
+                        author=resp["author"]
+                        #refers_to=["refersTo"],
+                        #referred_by=["referredBy"]
                     ),
                 )
                 query_results.append(result)
