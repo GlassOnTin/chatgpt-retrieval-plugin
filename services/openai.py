@@ -19,6 +19,9 @@ def get_embeddings(texts: List[str]) -> List[List[float]]:
     Raises:
         Exception: If the OpenAI API call fails.
     """
+    if not texts or len(texts)==0:
+        return []
+    
     # Call the OpenAI API to get the embeddings
     response = openai.Embedding.create(input=texts, model="text-embedding-ada-002")
 
