@@ -36,14 +36,10 @@ class DeleteResponse(BaseModel):
 class AddReferenceRequest(BaseModel):
     from_id: str
     to_id: str
-    from_property_name: str
-    to_property_name: str
 
 class DeleteReferenceRequest(BaseModel):
     from_id: str
     to_id: str
-    from_property_name: str
-    to_property_name: str
 
 class ReferenceResponse(BaseModel):
     success: bool
