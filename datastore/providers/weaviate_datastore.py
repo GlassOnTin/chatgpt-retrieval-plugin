@@ -5,8 +5,9 @@ from weaviate import Client
 import weaviate
 import os
 import uuid
+import re
 
-from weaviate.util import generate_uuid5
+from weaviate.util import generate_uuid5, get_valid_uuid
 
 from datastore.datastore import DataStore
 from models.models import (
@@ -223,9 +224,9 @@ class WeaviateDataStore(DataStore):
                                 "source_id",
                                 "url",
                                 "created_at",
-                                "author"
-                                #"refersTo",
-                                #"referredBy"
+                                "author",
+                                "refersTo",
+                                "referredBy"
                             ],
                         )
                         .with_hybrid(query=query.query, alpha=0.5, vector=query.embedding)
@@ -248,9 +249,9 @@ class WeaviateDataStore(DataStore):
                                 "source_id",
                                 "url",
                                 "created_at",
-                                "author"
-                                #"refersTo",
-                                #"referredBy"
+                                "author",
+                                "refersTo",
+                                "referredBy"
                             ],
                         )
                         .with_hybrid(query=query.query, alpha=0.5, vector=query.embedding)
@@ -281,9 +282,9 @@ class WeaviateDataStore(DataStore):
                         source_id=resp["source_id"],
                         url=resp["url"],
                         created_at=resp["created_at"],
-                        author=resp["author"]
-                        #refers_to=["refersTo"],
-                        #referred_by=["referredBy"]
+                        author=resp["author"],
+                        refers_to=get_valid_uuid(resp["refersTo"]['beacon']),
+                        referred_by=get_valid_uuid(resp["referredBy"]['beacon'])
                     ),
                 )
                 query_results.append(result)

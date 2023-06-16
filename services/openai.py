@@ -23,7 +23,6 @@ def get_embeddings(texts: List[str]) -> List[List[float]]:
         return []
     
     # Call the OpenAI API to get the embeddings
-    print(f"openai.Embedding.create: ", texts)
     response = openai.Embedding.create(input=texts, model="text-embedding-ada-002")
 
     # Extract the embedding data from the response
