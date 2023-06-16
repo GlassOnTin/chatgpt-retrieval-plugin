@@ -1,4 +1,3 @@
-# TODO
 import asyncio
 from typing import Dict, List, Optional
 from loguru import logger
@@ -415,7 +414,7 @@ class WeaviateDataStore(DataStore):
         """
         Adds a two-way cross-reference between two documents properties
         """
-        logger.debug(f"Adding reference from {from_id}/{from_property_name} to {to_id}/{to_property_name}")
+        logger.debug(f"Adding reference from {from_id} to {to_id}")
         try:
             # Add the first reference
             self.client.data_object.reference.add(
@@ -449,7 +448,7 @@ class WeaviateDataStore(DataStore):
         """
         Deletes a two-way cross-reference between two documents.
         """
-        logger.debug(f"Deleting reference from {from_id}/{from_property_name} to {to_id}/{to_property_name}")
+        logger.debug(f"Deleting reference from {from_id} to {to_id}")
         try:
             # Delete the first reference
             self.client.data_object.reference.delete(

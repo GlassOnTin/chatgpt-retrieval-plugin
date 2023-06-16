@@ -393,12 +393,6 @@ components:
         to_id:
           title: To ID
           type: string
-        from_property_name:
-          title: From Property Name
-          type: string
-        to_property_name:
-          title: To Property Name
-          type: string
     AddReferenceResponse:
       title: AddReferenceResponse
       required:
@@ -420,12 +414,6 @@ components:
           type: string
         to_id:
           title: To ID
-          type: string
-        from_property_name:
-          title: From Property Name
-          type: string
-        to_property_name:
-          title: To Property Name
           type: string
     DeleteReferenceResponse:
       title: DeleteReferenceResponse
