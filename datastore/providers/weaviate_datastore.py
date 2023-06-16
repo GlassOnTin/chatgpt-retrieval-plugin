@@ -268,6 +268,12 @@ class WeaviateDataStore(DataStore):
                     )
 
             query_results: List[DocumentChunkWithScore] = []
+            if "data" not in result:
+                logger.error(f"Query result does not contain 'data': {result}")
+                return []
+            else:
+                response = result["data"]["Get"][WEAVIATE_CLASS]
+
             response = result["data"]["Get"][WEAVIATE_CLASS]
 
             for resp in response:
