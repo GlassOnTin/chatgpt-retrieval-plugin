@@ -225,6 +225,8 @@ class WeaviateDataStore(DataStore):
                                 "url",
                                 "created_at",
                                 "author",
+                                "refersTo",
+                                "referredBy"
                             ],
                         )
                         .with_hybrid(query=query.query, alpha=0.5, vector=query.embedding)
@@ -248,6 +250,8 @@ class WeaviateDataStore(DataStore):
                                 "url",
                                 "created_at",
                                 "author",
+                                "refersTo",
+                                "referredBy"
                             ],
                         )
                         .with_hybrid(query=query.query, alpha=0.5, vector=query.embedding)
@@ -279,6 +283,8 @@ class WeaviateDataStore(DataStore):
                         url=resp["url"],
                         created_at=resp["created_at"],
                         author=resp["author"],
+                        refers_to=["refersTo"]
+                        referred_by=["referredBy"]
                     ),
                 )
                 query_results.append(result)
@@ -404,8 +410,6 @@ class WeaviateDataStore(DataStore):
         self,
         from_id: str,
         to_id: str,
-        from_property_name: str,
-        to_property_name: str,
         consistency_level: weaviate.data.replication.ConsistencyLevel = weaviate.data.replication.ConsistencyLevel.ALL,
     ) -> bool:
         """
@@ -416,7 +420,7 @@ class WeaviateDataStore(DataStore):
             # Add the first reference
             self.client.data_object.reference.add(
                 from_uuid=from_id,
-                from_property_name=from_property_name,
+                from_property_name="refersTo",
                 to_uuid=to_id,
                 from_class_name=WEAVIATE_CLASS,
                 to_class_name=WEAVIATE_CLASS,
@@ -425,7 +429,7 @@ class WeaviateDataStore(DataStore):
             # Add the second reference
             self.client.data_object.reference.add(
                 from_uuid=to_id,
-                from_property_name=to_property_name,
+                from_property_name="referredBy",
                 to_uuid=from_id,
                 from_class_name=WEAVIATE_CLASS,
                 to_class_name=WEAVIATE_CLASS,
@@ -440,8 +444,6 @@ class WeaviateDataStore(DataStore):
         self,
         from_id: str,
         to_id: str,
-        from_property_name: str,
-        to_property_name: str,
         consistency_level: weaviate.data.replication.ConsistencyLevel = weaviate.data.replication.ConsistencyLevel.ALL,
     ) -> bool:
         """
@@ -451,21 +453,21 @@ class WeaviateDataStore(DataStore):
         try:
             # Delete the first reference
             self.client.data_object.reference.delete(
-                from_id,
-                from_property_name,
-                to_id,
+                from_uuid=from_id,
+                from_property_name="refersTo",
+                to_uuid=to_id,
                 from_class_name=WEAVIATE_CLASS,
                 to_class_name=WEAVIATE_CLASS,
-                consistency_level=consistency_level,
+                consistency_level=consistency_level            
             )
             # Delete the second reference
             self.client.data_object.reference.delete(
-                to_id,
-                to_property_name,
-                from_id,
+                from_uuid=to_id,
+                from_property_name="referredBy",
+                to_uuid=from_id,
                 from_class_name=WEAVIATE_CLASS,
                 to_class_name=WEAVIATE_CLASS,
-                consistency_level=consistency_level,
+                consistency_level=consistency_level
             )
             return True
         except Exception as e:
