@@ -224,14 +224,12 @@ class WeaviateDataStore(DataStore):
                                 "source_id",
                                 "url",
                                 "created_at",
-                                "author",
-                                "refersTo",
-                                "referredBy"
+                                "author"
                             ],
                         )
                         .with_hybrid(query=query.query, alpha=0.5, vector=query.embedding)
                         .with_limit(query.top_k)  # type: ignore
-                        .with_additional(["score"])  # Removed "vector"
+                        .with_additional(["id","score"])  # Removed "vector"
                         .do()
                     )
                     
@@ -249,15 +247,13 @@ class WeaviateDataStore(DataStore):
                                 "source_id",
                                 "url",
                                 "created_at",
-                                "author",
-                                "refersTo",
-                                "referredBy"
+                                "author"
                             ],
                         )
                         .with_hybrid(query=query.query, alpha=0.5, vector=query.embedding)
                         .with_where(filters_)
                         .with_limit(query.top_k)  # type: ignore
-                        .with_additional(["score"])  # Removed "vector"
+                        .with_additional(["id","score"])  # Removed "vector"
                         .do()
                     )
                 elif query.filter.document_id:  # Check if only document_id is provided
@@ -278,7 +274,7 @@ class WeaviateDataStore(DataStore):
 
             for resp in response:
                 result = DocumentChunkWithScore(
-                    id=resp["chunk_id"],
+                    id=resp["_additional"]["id"],
                     text=resp["text"],
                     #embedding=resp["_additional"]["vector"],
                     score=resp["_additional"]["score"],
@@ -288,9 +284,7 @@ class WeaviateDataStore(DataStore):
                         source_id=resp["source_id"],
                         url=resp["url"],
                         created_at=resp["created_at"],
-                        author=resp["author"],
-                        refers_to=get_valid_uuid(resp["refersTo"]['beacon']),
-                        referred_by=get_valid_uuid(resp["referredBy"]['beacon'])
+                        author=resp["author"]
                     ),
                 )
                 query_results.append(result)
