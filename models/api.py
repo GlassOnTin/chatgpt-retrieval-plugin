@@ -33,11 +33,11 @@ class DeleteRequest(BaseModel):
 class DeleteResponse(BaseModel):
     success: bool
         
-class AddChildRequest(BaseModel):
+class AddReferenceRequest(BaseModel):
     parent_id: str
     child_id: str
 
-class DeleteChildRequest(BaseModel):
+class DeleteReferenceRequest(BaseModel):
     parent_id: str
     child_id: str
 

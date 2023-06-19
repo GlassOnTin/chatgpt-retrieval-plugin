@@ -16,8 +16,8 @@ from models.api import (
     QueryResponse,
     UpsertRequest,
     UpsertResponse,
-    AddChildRequest, 
-    DeleteChildRequest, 
+    AddReferenceRequest, 
+    DeleteReferenceRequest, 
     ReferenceResponse
 )
 from datastore.factory import get_datastore
@@ -63,10 +63,10 @@ async def upsert_file(
         metadata_obj = (
             DocumentMetadata.parse_raw(metadata)
             if metadata
-            else DocumentMetadata(source=Source.file)
+            else DocumentMetadata(source=file.filename)
         )
     except:
-        metadata_obj = DocumentMetadata(source=Source.file)
+        metadata_obj = DocumentMetadata(source=file.filename)
 
     document = await get_document_from_file(file, metadata_obj)
 
@@ -174,12 +174,12 @@ async def delete(
         raise HTTPException(status_code=500, detail="Internal Service Error")
 
 @app.post(
-    "/add_child",
+    "/add_reference",
     response_model=ReferenceResponse,
-    description="Adds a child reference, with first document as the parent, and second as the child.",
+    description="Adds a reference, with first document as the parent, and second as the child.",
 )
-async def add_child(
-    request: AddChildRequest = Body(...),
+async def add_reference(
+    request: AddReferenceRequest = Body(...),
     token: HTTPAuthorizationCredentials = Depends(validate_token),
 ):
     try:
@@ -193,12 +193,12 @@ async def add_child(
         raise HTTPException(status_code=500, detail="Internal Service Error")
 
 @app.post(
-    "/delete_child",
+    "/delete_reference",
     response_model=ReferenceResponse,
     description="Deletes a child reference, with first document as the parent, and second as the child.",
 )
-async def delete_child(
-    request: DeleteChildRequest = Body(...),
+async def delete_reference(
+    request: DeleteReferenceRequest = Body(...),
     token: HTTPAuthorizationCredentials = Depends(validate_token),
 ):
     try:
