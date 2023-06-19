@@ -179,11 +179,6 @@ class WeaviateDataStore(DataStore):
                     for key, value in metadata.dict().items():
                         doc_chunk_dict[key] = value
                     doc_chunk_dict["chunk_id"] = doc_chunk_dict.pop("id")
-                    doc_chunk_dict["source"] = (
-                        doc_chunk_dict.pop("source").value
-                        if doc_chunk_dict["source"]
-                        else None
-                    )
                     embedding = doc_chunk_dict.pop("embedding")
 
                     batch.add_data_object(
@@ -364,16 +359,8 @@ class WeaviateDataStore(DataStore):
 
     @staticmethod
     def build_filters(filter):
-        if filter.source:
-            filter.source = filter.source.value
-
         operands = []
         filter_conditions = {
-            "source": {
-                "operator": "Equal",
-                "value": "query.filter.source.value",
-                "value_key": "valueString",
-            },
             "start_date": {"operator": "GreaterThanEqual", "value_key": "valueDate"},
             "end_date": {"operator": "LessThanEqual", "value_key": "valueDate"},
             "document_id": {"operator": "Equal", "value_key": "valueString"},
