@@ -23,7 +23,7 @@ from models.api import (
 from datastore.factory import get_datastore
 from services.file import get_document_from_file
 
-from models.models import DocumentMetadata, Source
+from models.models import DocumentMetadata
 
 
 bearer_scheme = HTTPBearer()
