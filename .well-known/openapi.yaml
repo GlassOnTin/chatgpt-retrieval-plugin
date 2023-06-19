@@ -84,7 +84,7 @@ paths:
                 $ref: "#/components/schemas/HTTPValidationError"
       security:
         - HTTPBearer: []
-  /add_reference:
+  /add_child:
     post:
       summary: Add Reference
       description: Adds a cross-reference between two document properties.
@@ -373,15 +373,15 @@ components:
     AddReferenceRequest:
       title: AddReferenceRequest
       required:
-        - from_id
-        - to_id
+        - parent_id
+        - child_id
       type: object
       properties:
-        from_id:
-          title: From ID
+        parent_id:
+          title: Parent ID
           type: string
-        to_id:
-          title: To ID
+        child_id:
+          title: Child ID
           type: string
     AddReferenceResponse:
       title: AddReferenceResponse
@@ -395,15 +395,15 @@ components:
     DeleteReferenceRequest:
       title: DeleteReferenceRequest      
       required:
-        - from_id
-        - to_id        
+        - parent_id
+        - child_id
       type: object
       properties:
-        from_id:
-          title: From ID
+        parent_id:
+          title: Parent ID
           type: string
-        to_id:
-          title: To ID
+        child_id:
+          title: Child ID
           type: string
     DeleteReferenceResponse:
       title: DeleteReferenceResponse

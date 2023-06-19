@@ -7,7 +7,7 @@ import os
 import uuid
 import re
 
-from weaviate.util import generate_uuid5, get_valid_uuid
+from weaviate.util import generate_uuid5
 
 from datastore.datastore import DataStore
 from models.models import (
@@ -16,8 +16,7 @@ from models.models import (
     DocumentMetadataFilter,
     QueryResult,
     QueryWithEmbedding,
-    DocumentChunkWithScore,
-    Source,
+    DocumentChunkWithScore
 )
 
 
@@ -35,60 +34,57 @@ WEAVIATE_BATCH_NUM_WORKERS = int(os.environ.get("WEAVIATE_BATCH_NUM_WORKERS", 1)
 
 SCHEMA = {
     "class": WEAVIATE_CLASS,
-    "description": "The main class",
+    "description": "The main class for planning",
     "properties": [
         {
             "name": "chunk_id",
             "dataType": ["string"],
-            "description": "The chunk id",
+            "description": "The unique id of the chunk",
         },
         {
             "name": "document_id",
             "dataType": ["string"],
-            "description": "The document id",
+            "description": "The unique id of the planning item",
+        },
+        {
+            "name": "artifact_type",
+            "dataType": ["string"],
+            "description": "The type of artifact required for the work item (Concept, Chapter Plan, Plot Point, Character Development, Writing Task)",
         },
         {
             "name": "text",
             "dataType": ["text"],
-            "description": "The chunk's text",
+            "description": "The text of the chunk",
         },
         {
             "name": "source",
             "dataType": ["string"],
-            "description": "The source of the data",
-        },
-        {
-            "name": "source_id",
-            "dataType": ["string"],
-            "description": "The source id",
-        },
-        {
-            "name": "url",
-            "dataType": ["string"],
-            "description": "The source url",
+            "description": "The source of the data (chat, file, url)",
         },
         {
             "name": "created_at",
             "dataType": ["date"],
-            "description": "Creation date of document",
+            "description": "Creation date of the planning item",
         },
         {
-            "name": "author",
+            "name": "status",
             "dataType": ["string"],
-            "description": "Document author",
+            "description": "The current status of the planning item (To Do, In Progress, Done)",
         },
         {
-            "name": "refersTo",
+            "name": "child",
             "dataType": [WEAVIATE_CLASS],
-            "description": "A reference to another Document",
+            "description": "The child items of this item",
         },
         {
-            "name": "referredBy",
+            "name": "parent",
             "dataType": [WEAVIATE_CLASS],
-            "description": "A reference from another Document",
+            "description": "The parent items of this item",
         }
     ],
 }
+
+
 
 
 def extract_schema_properties(schema):
@@ -219,23 +215,24 @@ class WeaviateDataStore(DataStore):
                             [
                                 "chunk_id",
                                 "document_id",
+                                "artifact_type"
                                 "text",
                                 "source",
-                                "source_id",
-                                "url",
                                 "created_at",
-                                "author"
+                                "status"
                             ],
                         )
                         .with_hybrid(query=query.query, alpha=0.5, vector=query.embedding)
-                        .with_limit(query.top_k)  # type: ignore
-                        .with_additional(["id","score"])  # Removed "vector"
+                        .with_limit(query.top_k)
+                        .with_additional(["id","score"])
                         .do()
                     )
                     
             else:
                 filters_ = self.build_filters(query.filter)
-                if query.query:  # Added this check
+                
+                # Added this check
+                if query.query:  
                     result = (
                         self.client.query.get(
                             WEAVIATE_CLASS,
@@ -243,20 +240,21 @@ class WeaviateDataStore(DataStore):
                                 "chunk_id",
                                 "document_id",
                                 "text",
+                                "artifact_type"                                
                                 "source",
-                                "source_id",
-                                "url",
                                 "created_at",
-                                "author"
+                                "status"
                             ],
                         )
                         .with_hybrid(query=query.query, alpha=0.5, vector=query.embedding)
                         .with_where(filters_)
-                        .with_limit(query.top_k)  # type: ignore
-                        .with_additional(["id","score"])  # Removed "vector"
+                        .with_limit(query.top_k)
+                        .with_additional(["id","score"])
                         .do()
                     )
-                elif query.filter.document_id:  # Check if only document_id is provided
+                
+                # Check if only document_id is provided
+                elif query.filter.document_id:
                     result = self.client.data_object.get_by_id(
                         query.filter.document_id,
                         class_name=WEAVIATE_CLASS,
@@ -276,16 +274,14 @@ class WeaviateDataStore(DataStore):
                 result = DocumentChunkWithScore(
                     id=resp["_additional"]["id"],
                     text=resp["text"],
-                    #embedding=resp["_additional"]["vector"],
                     score=resp["_additional"]["score"],
                     metadata=DocumentChunkMetadata(
                         document_id=resp["document_id"] if resp["document_id"] else "",
-                        source=Source(resp["source"]),
-                        source_id=resp["source_id"],
-                        url=resp["url"],
+                        artifact_type=resp["artifact_type"] if resp["artifact_type"] else "",
+                        source=resp["source"] if resp["source"] else "",
                         created_at=resp["created_at"],
-                        author=resp["author"]
-                    ),
+                        status=resp["status"] if resp["status"] else ""
+                    )
                 )
                 query_results.append(result)
             return QueryResult(query=query.query, results=query_results)
@@ -408,70 +404,70 @@ class WeaviateDataStore(DataStore):
     
     async def add_reference(
         self,
-        from_id: str,
-        to_id: str,
+        parent_id: str,
+        child_id: str,
         consistency_level: weaviate.data.replication.ConsistencyLevel = weaviate.data.replication.ConsistencyLevel.ALL,
     ) -> bool:
         """
         Adds a two-way cross-reference between two documents properties
         """
-        logger.debug(f"Adding reference from {from_id} to {to_id}")
+        logger.debug(f"Adding references between {parent_id} and {child_id}")
         try:
             # Add the first reference
             self.client.data_object.reference.add(
-                from_uuid=from_id,
-                from_property_name="refersTo",
-                to_uuid=to_id,
+                from_uuid=parent_id,
+                from_property_name="child",
+                to_uuid=child_id,
                 from_class_name=WEAVIATE_CLASS,
                 to_class_name=WEAVIATE_CLASS,
                 consistency_level=consistency_level
             )
             # Add the second reference
             self.client.data_object.reference.add(
-                from_uuid=to_id,
-                from_property_name="referredBy",
-                to_uuid=from_id,
+                from_uuid=child_id,
+                from_property_name="parent",
+                to_uuid=parent_id,
                 from_class_name=WEAVIATE_CLASS,
                 to_class_name=WEAVIATE_CLASS,
                 consistency_level=consistency_level
             )
             return True
         except Exception as e:
-            logger.error(f"Failed to add two-way reference between {from_id} and {to_id}: {e}")
+            logger.error(f"Failed to add references between {parent_id} and {child_id}: {e}")
             return False
 
     async def delete_reference(
         self,
-        from_id: str,
-        to_id: str,
+        parent_id: str,
+        child_id: str,
         consistency_level: weaviate.data.replication.ConsistencyLevel = weaviate.data.replication.ConsistencyLevel.ALL,
     ) -> bool:
         """
         Deletes a two-way cross-reference between two documents.
         """
-        logger.debug(f"Deleting reference from {from_id} to {to_id}")
+        logger.debug(f"Deleting references between {parent_id} and {child_id}")
         try:
             # Delete the first reference
             self.client.data_object.reference.delete(
-                from_uuid=from_id,
-                from_property_name="refersTo",
-                to_uuid=to_id,
+                from_uuid=parent_id,
+                from_property_name="child",
+                to_uuid=child_id,
                 from_class_name=WEAVIATE_CLASS,
                 to_class_name=WEAVIATE_CLASS,
                 consistency_level=consistency_level            
             )
             # Delete the second reference
             self.client.data_object.reference.delete(
-                from_uuid=to_id,
-                from_property_name="referredBy",
-                to_uuid=from_id,
+                from_uuid=child_id,
+                from_property_name="parent",
+                to_uuid=parent_id,
                 from_class_name=WEAVIATE_CLASS,
                 to_class_name=WEAVIATE_CLASS,
                 consistency_level=consistency_level
             )
             return True
         except Exception as e:
-            logger.error(f"Failed to delete two-way reference between {from_id} and {to_id}: {e}")
+            logger.error(f"Failed to delete references between  {parent_id} to {child_id}: {e}")
             return False
 
     @staticmethod

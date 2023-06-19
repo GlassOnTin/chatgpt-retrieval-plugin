@@ -16,8 +16,8 @@ from models.api import (
     QueryResponse,
     UpsertRequest,
     UpsertResponse,
-    AddReferenceRequest, 
-    DeleteReferenceRequest, 
+    AddChildRequest, 
+    DeleteChildRequest, 
     ReferenceResponse
 )
 from datastore.factory import get_datastore
@@ -97,8 +97,7 @@ async def upsert_main(
 @sub_app.post(
     "/upsert",
     response_model=UpsertResponse,
-    # NOTE: We are describing the shape of the API endpoint input due to a current limitation in parsing arrays of objects from OpenAPI schemas. This will not be necessary in the future.
-    description="Save chat information. Accepts an array of documents with text (potential questions + conversation text), metadata (source 'chat' and timestamp, no ID as this will be generated). Confirm with the user before saving, ask for more details/context.",
+    description="Save chat information. Accepts an array of documents with text and metadata (no ID required as this will be generated).",
 )
 async def upsert(
     request: UpsertRequest = Body(...),
@@ -134,7 +133,7 @@ async def query_main(
     "/query",
     response_model=QueryResponse,
     # NOTE: We are describing the shape of the API endpoint input due to a current limitation in parsing arrays of objects from OpenAPI schemas. This will not be necessary in the future.
-    description="Accepts search query objects array each with query and optional filter. Break down complex questions into sub-questions. Refine results by criteria, e.g. time / source, don't do this often. Split queries if ResponseTooLargeError occurs.",
+    description="Accepts search query objects array each with query and optional filter. Break down complex questions into sub-questions. Refine results by criteria, e.g. time, don't do this often. Split queries if ResponseTooLargeError occurs.",
 )
 async def query(
     request: QueryRequest = Body(...),
@@ -175,18 +174,18 @@ async def delete(
         raise HTTPException(status_code=500, detail="Internal Service Error")
 
 @app.post(
-    "/add_reference",
+    "/add_child",
     response_model=ReferenceResponse,
-    description="Adds a two-way cross-reference between two document properties",
+    description="Adds a child reference, with first document as the parent, and second as the child.",
 )
-async def add_reference(
-    request: AddReferenceRequest = Body(...),
+async def add_child(
+    request: AddChildRequest = Body(...),
     token: HTTPAuthorizationCredentials = Depends(validate_token),
 ):
     try:
         success = await datastore.add_reference(
-            from_id=request.from_id,
-            to_id=request.to_id
+            parent_id=request.parent_id,
+            child_id=request.child_id
         )
         return ReferenceResponse(success=success)
     except Exception as e:
@@ -194,18 +193,18 @@ async def add_reference(
         raise HTTPException(status_code=500, detail="Internal Service Error")
 
 @app.post(
-    "/delete_reference",
+    "/delete_child",
     response_model=ReferenceResponse,
-    description="Deletes a two-way cross-reference between two documents properties.",
+    description="Deletes a child reference, with first document as the parent, and second as the child.",
 )
-async def delete_reference(
-    request: DeleteReferenceRequest = Body(...),
+async def delete_child(
+    request: DeleteChildRequest = Body(...),
     token: HTTPAuthorizationCredentials = Depends(validate_token),
 ):
     try:
         success = await datastore.delete_reference(
-            from_id=request.from_id,
-            to_id=request.to_id
+            parent_id=request.parent_id,
+            child_id=request.child_id
         )
         return ReferenceResponse(success=success)
     except Exception as e:

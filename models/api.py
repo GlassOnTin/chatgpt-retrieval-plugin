@@ -33,13 +33,13 @@ class DeleteRequest(BaseModel):
 class DeleteResponse(BaseModel):
     success: bool
         
-class AddReferenceRequest(BaseModel):
-    from_id: str
-    to_id: str
+class AddChildRequest(BaseModel):
+    parent_id: str
+    child_id: str
 
-class DeleteReferenceRequest(BaseModel):
-    from_id: str
-    to_id: str
+class DeleteChildRequest(BaseModel):
+    parent_id: str
+    child_id: str
 
 class ReferenceResponse(BaseModel):
     success: bool
