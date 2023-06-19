@@ -10,7 +10,7 @@ paths:
     post:
       summary: Upsert
       description: Save chat information. Accepts an array of documents with text (potential questions + conversation text), metadata (source 'chat' and timestamp, no ID as this will be generated). Confirm with the user before saving, ask for more details/context.
-      operationId: upsert_upsert_post
+      operationId: upsert_post
       requestBody:
         content:
           application/json:
@@ -36,7 +36,7 @@ paths:
     post:
       summary: Query
       description: Accepts search query objects array each with query and optional filter. Break down complex questions into sub-questions. Refine results by criteria, e.g. time / source, don't do this often. Split queries if ResponseTooLargeError occurs.
-      operationId: query_query_post
+      operationId: query_post
       requestBody:
         content:
           application/json:
@@ -62,7 +62,7 @@ paths:
     post:
       summary: Delete
       description: Delete documents based on IDs or filter. If delete_all is true, all documents will be deleted.
-      operationId: delete_delete_post
+      operationId: delete_post
       requestBody:
         content:
           application/json:
@@ -84,10 +84,10 @@ paths:
                 $ref: "#/components/schemas/HTTPValidationError"
       security:
         - HTTPBearer: []
-  /add_child:
+  /add_reference:
     post:
       summary: Add Reference
-      description: Adds a cross-reference between two document properties.
+      description: Adds a reference between two documents.
       operationId: add_reference_post
       requestBody:
         content:
@@ -114,7 +114,7 @@ paths:
   /delete_reference:
     post:
       summary: Delete Reference
-      description: Deletes a cross-reference between two documents properties.
+      description: Deletes a reference between two documents.
       operationId: delete_reference_post
       requestBody:
         content:
@@ -153,27 +153,61 @@ components:
           type: string
         metadata:
           $ref: "#/components/schemas/DocumentMetadata"
-    DocumentChunkMetadata:
-      title: DocumentChunkMetadata
+    DocumentMetadata:
+      title: DocumentMetadata
       type: object
       properties:
-        source:
-          $ref: "#/components/schemas/Source"
-        source_id:
-          title: Source Id
+        artifact_type:
+          title: Artifact Type
           type: string
-        url:
-          title: Url
+        source:
+          title: Source
           type: string
         created_at:
           title: Created At
           type: string
-        author:
-          title: Author
+        status:
+          title: Status
+          type: string
+    DocumentChunkMetadata:
+      title: DocumentChunkMetadata
+      type: object
+      properties:
+        artifact_type:
+          title: Artifact Type
+          type: string
+        source:
+          title: Source
+          type: string
+        created_at:
+          title: Created At
+          type: string
+        status:
+          title: Status
           type: string
         document_id:
           title: Document Id
           type: string
+    DocumentChunk:
+      title: DocumentChunk
+      required:
+        - text
+        - metadata        
+      type: object
+      properties:
+        id:
+          title: Id
+          type: string
+        text:
+          title: Text
+          type: string
+        metadata:
+          $ref: "#/components/schemas/DocumentChunkMetadata"
+        embedding:
+          title: Embedding
+          type: array
+          items:
+            type: number
     DocumentChunkWithScore:
       title: DocumentChunkWithScore
       required:
@@ -198,24 +232,6 @@ components:
         score:
           title: Score
           type: number
-    DocumentMetadata:
-      title: DocumentMetadata
-      type: object
-      properties:
-        source:
-          $ref: "#/components/schemas/Source"
-        source_id:
-          title: Source Id
-          type: string
-        url:
-          title: Url
-          type: string
-        created_at:
-          title: Created At
-          type: string
-        author:
-          title: Author
-          type: string
     DocumentMetadataFilter:
       title: DocumentMetadataFilter
       type: object
@@ -224,12 +240,7 @@ components:
           title: Document Id
           type: string
         source:
-          $ref: "#/components/schemas/Source"
-        source_id:
-          title: Source Id
-          type: string
-        author:
-          title: Author
+          title: Source
           type: string
         start_date:
           title: Start Date
@@ -298,25 +309,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/DocumentChunkWithScore"
-    Source:
-      title: Source
-      enum:
-        - email
-        - file
-        - chat
-      type: string
-      description: An enumeration.
-    UpsertRequest:
-      title: UpsertRequest
-      required:
-        - documents
-      type: object
-      properties:
-        documents:
-          title: Documents
-          type: array
-          items:
-            $ref: "#/components/schemas/Document"
     UpsertResponse:
       title: UpsertResponse
       required:

@@ -25,12 +25,12 @@ class Document(BaseModel):
     text: str
     metadata: Optional[DocumentMetadata] = None
 
-
 class DocumentWithChunks(Document):
     chunks: List[DocumentChunk]
 
 class DocumentMetadataFilter(BaseModel):
     document_id: Optional[str] = None
+    source: Optional[str] = None
     start_date: Optional[str] = None  # any date string format
     end_date: Optional[str] = None  # any date string format
 
