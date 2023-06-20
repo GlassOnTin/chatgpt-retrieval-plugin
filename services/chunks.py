@@ -110,12 +110,12 @@ def create_document_chunks(
         A tuple of (doc_chunks, doc_id), where doc_chunks is a list of document chunks, each of which is a DocumentChunk object with an id, a document_id, a text, and a metadata attribute,
         and doc_id is the id of the document object, generated if not provided. The id of each chunk is generated from the document id and a sequential number, and the metadata is copied from the document object.
     """
-    # Check if the document text is empty or whitespace
-    if not doc.text or doc.text.isspace():
-        return [], doc.id or str(uuid.uuid4())
-
     # Generate a document id if not provided
     doc_id = doc.id or str(uuid.uuid4())
+
+    # Check if the document text is empty or whitespace
+    if not doc.text or doc.text.isspace():
+        return [""], doc.id
 
     # Split the document text into chunks
     text_chunks = get_text_chunks(doc.text, chunk_token_size)
