@@ -3,6 +3,7 @@ from typing import List, Optional
 from enum import Enum
 
 class DocumentMetadata(BaseModel):
+    name: Optional[str] = None
     artifact_type: Optional[str] = None
     source: Optional[str] = None
     created_at: Optional[str] = None
@@ -13,6 +14,7 @@ class DocumentChunkMetadata(DocumentMetadata):
 
 class DocumentChunk(BaseModel):
     id: Optional[str] = None
+    index: int
     text: str
     metadata: DocumentChunkMetadata
     embedding: Optional[List[float]] = None
@@ -29,7 +31,8 @@ class DocumentWithChunks(Document):
     chunks: List[DocumentChunk]
 
 class DocumentMetadataFilter(BaseModel):
-    document_id: Optional[str] = None
+    id: Optional[str] = None
+    name: Optional[str] = None
     artifact_type: Optional[str] = None
     source: Optional[str] = None
     start_date: Optional[str] = None  # any date string format
