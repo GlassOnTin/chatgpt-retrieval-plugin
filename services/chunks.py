@@ -32,7 +32,7 @@ def get_text_chunks(text: str, chunk_token_size: Optional[int]) -> List[str]:
     """
     # Return an empty list if the text is empty or whitespace
     if not text or text.isspace():
-        return []
+        text = " "
 
     # Tokenize the text
     tokens = tokenizer.encode(text, disallowed_special=())
@@ -115,7 +115,7 @@ def create_document_chunks(
 
     # Check if the document text is empty or whitespace
     if not doc.text or doc.text.isspace():
-        return [""], doc.id
+        doc.text = " "
 
     # Split the document text into chunks
     text_chunks = get_text_chunks(doc.text, chunk_token_size)
