@@ -115,7 +115,19 @@ def create_document_chunks(
 
     # Check if the document text is empty or whitespace
     if not doc.text or doc.text.isspace():
-        doc.text = " "
+        # Create a single chunk with the document's metadata
+        metadata = (
+            DocumentChunkMetadata(**doc.metadata.__dict__)
+            if doc.metadata is not None
+            else DocumentChunkMetadata()
+        )
+        metadata.document_id = doc_id
+        doc_chunk = DocumentChunk(
+            index=0,
+            text='',  # No text
+            metadata=metadata,
+        )
+        return [doc_chunk], doc_id
 
     # Split the document text into chunks
     text_chunks = get_text_chunks(doc.text, chunk_token_size)

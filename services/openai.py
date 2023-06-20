@@ -19,17 +19,19 @@ def get_embeddings(texts: List[str]) -> List[List[float]]:
     Raises:
         Exception: If the OpenAI API call fails.
     """
-    if not texts or all(text.strip() == "" for text in texts):
-        return []
-    
-    # Call the OpenAI API to get the embeddings
-    response = openai.Embedding.create(input=texts, model="text-embedding-ada-002")
-
-    # Extract the embedding data from the response
-    data = response["data"]  # type: ignore
-
-    # Return the embeddings as a list of lists of floats
-    return [result["embedding"] for result in data]
+    embeddings = []
+    for text in texts:
+        if text.strip():
+            # Call the OpenAI API to get the embedding for the text
+            response = openai.Embedding.create(input=[text], model="text-embedding-ada-002")
+            # Extract the embedding data from the response
+            data = response["data"]  # type: ignore
+            # Add the embedding to the embeddings list
+            embeddings.append(data[0]["embedding"])
+        else:
+            # Use a default embedding for empty text
+            embeddings.append([0.0] * EMBEDDING_SIZE)
+    return embeddings
 
 
 @retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(3))
