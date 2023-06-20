@@ -209,9 +209,9 @@ class WeaviateDataStore(DataStore):
                             WEAVIATE_CLASS,
                             [
                                 "chunk_id",
-                                "document_id",
-                                "artifact_type"
+                                "document_id",                                
                                 "text",
+                                "artifact_type",
                                 "source",
                                 "created_at",
                                 "status"
@@ -235,7 +235,7 @@ class WeaviateDataStore(DataStore):
                                 "chunk_id",
                                 "document_id",
                                 "text",
-                                "artifact_type"                                
+                                "artifact_type",
                                 "source",
                                 "created_at",
                                 "status"
