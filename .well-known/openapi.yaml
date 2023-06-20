@@ -169,6 +169,25 @@ components:
         status:
           title: Status
           type: string
+    DocumentMetadataFilter:
+      title: DocumentMetadataFilter
+      type: object
+      properties:
+        document_id:
+          title: Document Id
+          type: string
+        artifact_type:
+          title: Artifact Type
+          type: string          
+        source:
+          title: Source
+          type: string
+        start_date:
+          title: Start Date
+          type: string
+        end_date:
+          title: End Date
+          type: string          
     DocumentChunkMetadata:
       title: DocumentChunkMetadata
       type: object
@@ -232,22 +251,6 @@ components:
         score:
           title: Score
           type: number
-    DocumentMetadataFilter:
-      title: DocumentMetadataFilter
-      type: object
-      properties:
-        document_id:
-          title: Document Id
-          type: string
-        source:
-          title: Source
-          type: string
-        start_date:
-          title: Start Date
-          type: string
-        end_date:
-          title: End Date
-          type: string
     HTTPValidationError:
       title: HTTPValidationError
       type: object

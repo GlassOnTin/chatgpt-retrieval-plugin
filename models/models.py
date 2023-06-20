@@ -30,6 +30,7 @@ class DocumentWithChunks(Document):
 
 class DocumentMetadataFilter(BaseModel):
     document_id: Optional[str] = None
+    artifact_type: Optional[str] = None
     source: Optional[str] = None
     start_date: Optional[str] = None  # any date string format
     end_date: Optional[str] = None  # any date string format
