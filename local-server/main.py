@@ -96,7 +96,7 @@ async def upsert(
         return UpsertResponse(ids=ids)
     except Exception as e:
         print("Error:", e)
-        raise HTTPException(status_code=500, detail="Internal Service Error")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/query", response_model=QueryResponse)
@@ -108,8 +108,7 @@ async def query_main(request: QueryRequest = Body(...)):
         return QueryResponse(results=results)
     except Exception as e:
         print("Error:", e)
-        raise HTTPException(status_code=500, detail="Internal Service Error")
-
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.delete(
     "/delete",
@@ -132,7 +131,7 @@ async def delete(
         return DeleteResponse(success=success)
     except Exception as e:
         print("Error:", e)
-        raise HTTPException(status_code=500, detail="Internal Service Error")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.on_event("startup")
