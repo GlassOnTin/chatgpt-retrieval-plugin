@@ -37,6 +37,7 @@ class DataStore(ABC):
             ]
         )
 
+        print(documents)
         chunks = get_document_chunks(documents, chunk_token_size)
         print(chunks)
 
