@@ -309,6 +309,17 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/DocumentChunkWithScore"
+    UpsertRequest:
+      title: UpsertRequest
+      required:
+        - documents
+      type: object
+      properties:
+        documents:
+          title: Documents
+          type: array
+          items:
+            $ref: "#/components/schemas/Document"      
     UpsertResponse:
       title: UpsertResponse
       required:
