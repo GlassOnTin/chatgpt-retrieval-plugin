@@ -28,7 +28,7 @@ class DataStore(ABC):
             *[
                 self.delete(
                     filter=DocumentMetadataFilter(
-                        document_id=document.id,
+                        id=document.id,
                     ),
                     delete_all=False,
                 )
@@ -38,6 +38,7 @@ class DataStore(ABC):
         )
 
         chunks = get_document_chunks(documents, chunk_token_size)
+        print(chunks)
 
         return await self._upsert(chunks)
 
