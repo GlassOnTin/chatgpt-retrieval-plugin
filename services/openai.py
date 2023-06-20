@@ -4,6 +4,8 @@ import openai
 
 from tenacity import retry, wait_random_exponential, stop_after_attempt
 
+EMBEDDING_MODEL = "text-embedding-ada-002"
+EMBEDDING_SIZE = 1536
 
 @retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(3))
 def get_embeddings(texts: List[str]) -> List[List[float]]:
@@ -23,7 +25,7 @@ def get_embeddings(texts: List[str]) -> List[List[float]]:
     for text in texts:
         if text.strip():
             # Call the OpenAI API to get the embedding for the text
-            response = openai.Embedding.create(input=[text], model="text-embedding-ada-002")
+            response = openai.Embedding.create(input=[text], model=EMBEDDING_MODEL)
             # Extract the embedding data from the response
             data = response["data"]  # type: ignore
             # Add the embedding to the embeddings list
