@@ -91,7 +91,7 @@ async def upsert_main(
         return UpsertResponse(ids=ids)
     except Exception as e:
         print("Error:", e)
-        raise HTTPException(status_code=500, detail="Internal Service Error")
+        raise HTTPException(status_code=500, detail=f"str({e})")
 
 
 @sub_app.post(
@@ -108,7 +108,7 @@ async def upsert(
         return UpsertResponse(ids=ids)
     except Exception as e:
         print("Error:", e)
-        raise HTTPException(status_code=500, detail="Internal Service Error")
+        raise HTTPException(status_code=500, detail=f"str({e})")
 
 
 @app.post(
@@ -126,8 +126,7 @@ async def query_main(
         return QueryResponse(results=results)
     except Exception as e:
         print("Error:", e)
-        raise HTTPException(status_code=500, detail="Internal Service Error")
-
+        raise HTTPException(status_code=500, detail=f"str({e})")
 
 @sub_app.post(
     "/query",
@@ -146,8 +145,7 @@ async def query(
         return QueryResponse(results=results)
     except Exception as e:
         print("Error:", e)
-        raise HTTPException(status_code=500, detail="Internal Service Error")
-
+        raise HTTPException(status_code=500, detail=f"str({e})")
 
 @app.post(
     "/delete",
@@ -171,7 +169,7 @@ async def delete(
         return DeleteResponse(success=success)
     except Exception as e:
         print("Error:", e)
-        raise HTTPException(status_code=500, detail="Internal Service Error")
+        raise HTTPException(status_code=500, detail=f"str({e})")
 
 @app.post(
     "/add_reference",
@@ -190,8 +188,8 @@ async def add_reference(
         return ReferenceResponse(success=success)
     except Exception as e:
         print("Error:", e)
-        raise HTTPException(status_code=500, detail="Internal Service Error")
-
+        raise HTTPException(status_code=500, detail=f"str({e})")
+    
 @app.post(
     "/delete_reference",
     response_model=ReferenceResponse,
@@ -209,7 +207,7 @@ async def delete_reference(
         return ReferenceResponse(success=success)
     except Exception as e:
         print("Error:", e)
-        raise HTTPException(status_code=500, detail="Internal Service Error")
+        raise HTTPException(status_code=500, detail=f"str({e})")
 
 @app.on_event("startup")
 async def startup():
