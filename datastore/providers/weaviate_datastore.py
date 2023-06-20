@@ -42,9 +42,9 @@ SCHEMA = {
             "description": "The unique id of the chunk",
         },
         {
-            "name": "name",
+            "name": "title",
             "dataType": ["string"],
-            "description": "A name for the document",
+            "description": "A title for the document",
         },
         {
             "name": "artifact_type",
@@ -202,7 +202,7 @@ class WeaviateDataStore(DataStore):
                             WEAVIATE_CLASS,
                             [
                                 "chunk_id",
-                                "name",                                
+                                "title",                                
                                 "text",
                                 "artifact_type",
                                 "source",
@@ -226,7 +226,7 @@ class WeaviateDataStore(DataStore):
                             WEAVIATE_CLASS,
                             [
                                 "chunk_id",
-                                "name",
+                                "title",
                                 "text",
                                 "artifact_type",
                                 "source",
@@ -264,7 +264,7 @@ class WeaviateDataStore(DataStore):
                     text=resp["text"],
                     score=resp["_additional"]["score"],
                     metadata=DocumentChunkMetadata(
-                        name=resp["name"] if resp["name"] else "",
+                        title=resp["title"] if resp["title"] else "",
                         artifact_type=resp["artifact_type"] if resp["artifact_type"] else "",
                         source=resp["source"] if resp["source"] else "",
                         created_at=resp["created_at"],
