@@ -133,9 +133,8 @@ def create_document_chunks(
 
     # Assign each chunk a sequential number and create a DocumentChunk object
     for i, text_chunk in enumerate(text_chunks):
-        chunk_id = f"{doc_id}_{i}"
         doc_chunk = DocumentChunk(
-            id=chunk_id,
+            index=i,
             text=text_chunk,
             metadata=metadata,
         )

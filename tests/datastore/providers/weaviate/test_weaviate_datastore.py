@@ -50,12 +50,17 @@ def test_db(weaviate_client, documents):
 def documents():
     documents = []
 
-    authors = ["Max Mustermann", "John Doe", "Jane Doe"]
     texts = [
         "lorem ipsum dolor sit amet",
         "consectetur adipiscing elit",
         "sed do eiusmod tempor incididunt",
     ]
+    artifact_types = [
+        "text",
+        "email",
+        "email"
+    ]
+    names = ["abc_123", "def_456", "ghi_789"]
     ids = ["abc_123", "def_456", "ghi_789"]
     sources = ["chat", "email", "email"]
     created_at = [
@@ -67,15 +72,14 @@ def documents():
     for i in range(3):
         documents.append(
             {
-                "id": ids[i],
+                "id": ids[i],                
                 "text": texts[i],
                 "metadata": {
                     "source": sources[i],
-                    "source_id": "5325",
-                    "url": "http://example.com",
-                    "created_at": created_at[i],
-                    "author": authors[i],
-                },
+                    "name": names[i],
+                    "artifact_type": artifact_types[i],                    
+                    "created_at": created_at[i]                    
+                }
             }
         )
 
@@ -147,11 +151,8 @@ def test_upsert(weaviate_client, document_id):
     leo ut sollicitudin tempor, dolor augue blandit nunc, eu lacinia ipsum turpis vitae nulla. Aenean bibendum 
     tincidunt magna in pulvinar. Sed tincidunt vel nisi ac maximus.
     """
-    source = "email"
-    source_id = "5325"
-    url = "http://example.com"
-    created_at = "2022-12-16T08:00:00+01:00"
-    author = "Max Mustermann"
+    source = "email"        
+    created_at = "2022-12-16T08:00:00+01:00"    
 
     documents = {
         "documents": [
@@ -160,10 +161,7 @@ def test_upsert(weaviate_client, document_id):
                 "text": text,
                 "metadata": {
                     "source": source,
-                    "source_id": source_id,
-                    "url": url,
-                    "created_at": created_at,
-                    "author": author,
+                    "created_at": created_at
                 },
             }
         ]
@@ -175,17 +173,13 @@ def test_upsert(weaviate_client, document_id):
     assert response.json() == {"ids": [document_id]}
 
     properties = [
-        "chunk_id",
-        "document_id",
-        "source",
-        "source_id",
-        "url",
+        "chunk_id",        
+        "source",        
         "created_at",
-        "author",
     ]
 
     where_filter = {
-        "path": ["document_id"],
+        "path": ["id"],
         "operator": "Equal",
         "valueString": document_id,
     }
@@ -204,14 +198,10 @@ def test_upsert(weaviate_client, document_id):
 
     for i, weaviate_doc in enumerate(weaviate_docs):
         assert weaviate_doc["chunk_id"] == f"{document_id}_{i}"
-
         assert weaviate_doc["document_id"] == document_id
 
-        assert weaviate_doc["source"] == source
-        assert weaviate_doc["source_id"] == source_id
-        assert weaviate_doc["url"] == url
+        assert weaviate_doc["source"] == source                
         assert weaviate_doc["created_at"] == created_at
-        assert weaviate_doc["author"] == author
 
         assert weaviate_doc["_additional"]["vector"]
 
@@ -226,11 +216,8 @@ def test_upsert_no_metadata(weaviate_client):
     }
 
     metadata_properties = [
-        "source",
-        "source_id",
-        "url",
-        "created_at",
-        "author",
+        "source",        
+        "created_at"
     ]
 
     response = client.post("/upsert", json={"documents": [no_metadata_doc]})
@@ -435,13 +422,10 @@ def test_is_valid_weaviate_id(test_input, expected_result):
 def test_upsert_same_docid(test_db, weaviate_client):
     def get_doc_by_document_id(document_id):
         properties = [
-            "chunk_id",
-            "document_id",
+            "chunk_id",            
             "source",
-            "source_id",
-            "url",
-            "created_at",
-            "author",
+            "name",
+            "created_at"
         ]
         where_filter = {
             "path": ["document_id"],

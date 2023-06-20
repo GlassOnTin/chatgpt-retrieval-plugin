@@ -157,6 +157,9 @@ components:
       title: DocumentMetadata
       type: object
       properties:
+        name:
+          title: Name
+          type: string
         artifact_type:
           title: Artifact Type
           type: string
@@ -173,8 +176,11 @@ components:
       title: DocumentMetadataFilter
       type: object
       properties:
-        document_id:
-          title: Document Id
+        id:
+          title: id
+          type: string
+        name:
+          title: Name
           type: string
         artifact_type:
           title: Artifact Type
@@ -192,6 +198,9 @@ components:
       title: DocumentChunkMetadata
       type: object
       properties:
+        name:
+          title: Name
+          type: string      
         artifact_type:
           title: Artifact Type
           type: string

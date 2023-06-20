@@ -34,7 +34,7 @@ WEAVIATE_BATCH_NUM_WORKERS = int(os.environ.get("WEAVIATE_BATCH_NUM_WORKERS", 1)
 
 SCHEMA = {
     "class": WEAVIATE_CLASS,
-    "description": "The main class for planning",
+    "description": "The datastore class",
     "properties": [
         {
             "name": "chunk_id",
@@ -42,9 +42,9 @@ SCHEMA = {
             "description": "The unique id of the chunk",
         },
         {
-            "name": "document_id",
+            "name": "name",
             "dataType": ["string"],
-            "description": "The unique id of the planning item",
+            "description": "A name for the document",
         },
         {
             "name": "artifact_type",
@@ -169,25 +169,18 @@ class WeaviateDataStore(DataStore):
             for doc_id, doc_chunks in chunks.items():
                 logger.debug(f"Upserting {doc_id} with {len(doc_chunks)} chunks")
                 for doc_chunk in doc_chunks:
-                    # we generate a uuid regardless of the format of the document_id because
-                    # weaviate needs a uuid to store each document chunk and
-                    # a document chunk cannot share the same uuid
-                    doc_uuid = generate_uuid5(doc_chunk, WEAVIATE_CLASS)
                     metadata = doc_chunk.metadata
                     doc_chunk_dict = doc_chunk.dict()
                     doc_chunk_dict.pop("metadata")
                     for key, value in metadata.dict().items():
                         doc_chunk_dict[key] = value
-                    doc_chunk_dict["chunk_id"] = doc_chunk_dict.pop("id")
                     embedding = doc_chunk_dict.pop("embedding")
 
                     batch.add_data_object(
-                        uuid=doc_uuid,
                         data_object=doc_chunk_dict,
                         class_name=WEAVIATE_CLASS,
                         vector=embedding,
                     )
-
                 doc_ids.append(doc_id)
             batch.flush()
         return doc_ids
@@ -209,7 +202,7 @@ class WeaviateDataStore(DataStore):
                             WEAVIATE_CLASS,
                             [
                                 "chunk_id",
-                                "document_id",                                
+                                "name",                                
                                 "text",
                                 "artifact_type",
                                 "source",
@@ -233,7 +226,7 @@ class WeaviateDataStore(DataStore):
                             WEAVIATE_CLASS,
                             [
                                 "chunk_id",
-                                "document_id",
+                                "name",
                                 "text",
                                 "artifact_type",
                                 "source",
@@ -248,10 +241,10 @@ class WeaviateDataStore(DataStore):
                         .do()
                     )
                 
-                # Check if only document_id is provided
-                elif query.filter.document_id:
+                # Check if only id is provided
+                elif query.filter.id:
                     result = self.client.data_object.get_by_id(
-                        query.filter.document_id,
+                        query.filter.id,
                         class_name=WEAVIATE_CLASS,
                         consistency_level=weaviate.data.replication.ConsistencyLevel.ONE,
                     )
@@ -271,7 +264,7 @@ class WeaviateDataStore(DataStore):
                     text=resp["text"],
                     score=resp["_additional"]["score"],
                     metadata=DocumentChunkMetadata(
-                        document_id=resp["document_id"] if resp["document_id"] else "",
+                        name=resp["name"] if resp["name"] else "",
                         artifact_type=resp["artifact_type"] if resp["artifact_type"] else "",
                         source=resp["source"] if resp["source"] else "",
                         created_at=resp["created_at"],
@@ -308,7 +301,7 @@ class WeaviateDataStore(DataStore):
 
         if ids:
             operands = [
-                {"path": ["document_id"], "operator": "Equal", "valueString": id}
+                {"path": ["id"], "operator": "Equal", "valueString": id}
                 for id in ids
             ]
 
@@ -363,7 +356,6 @@ class WeaviateDataStore(DataStore):
         filter_conditions = {
             "start_date": {"operator": "GreaterThanEqual", "value_key": "valueDate"},
             "end_date": {"operator": "LessThanEqual", "value_key": "valueDate"},
-            "document_id": {"operator": "Equal", "value_key": "valueString"},
             "default": {"operator": "Equal", "value_key": "valueString"},
         }
 
