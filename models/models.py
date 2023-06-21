@@ -13,7 +13,6 @@ class DocumentChunkMetadata(DocumentMetadata):
     document_id: Optional[str] = None
 
 class DocumentChunk(BaseModel):
-    id: Optional[str] = None
     index: int
     text: str
     metadata: DocumentChunkMetadata
@@ -23,7 +22,6 @@ class DocumentChunkWithScore(DocumentChunk):
     score: float
 
 class Document(BaseModel):
-    id: Optional[str] = None
     text: str
     metadata: Optional[DocumentMetadata] = None
 
@@ -31,7 +29,7 @@ class DocumentWithChunks(Document):
     chunks: List[DocumentChunk]
 
 class DocumentMetadataFilter(DocumentMetadata):
-    id: Optional[str] = None
+    document_id: Optional[str] = None
     start_date: Optional[str] = None  # any date string format
     end_date: Optional[str] = None  # any date string format
 
