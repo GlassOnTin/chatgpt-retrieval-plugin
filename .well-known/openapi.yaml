@@ -173,7 +173,7 @@ components:
       title: DocumentMetadataFilter
       type: object
       properties:
-         title:
+        title:
           title: Title
           type: string
         artifact_type:
