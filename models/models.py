@@ -13,6 +13,7 @@ class DocumentChunkMetadata(DocumentMetadata):
     document_id: Optional[str] = None
 
 class DocumentChunk(BaseModel):
+    id: Optional[str] = None
     index: int
     text: str
     metadata: DocumentChunkMetadata
@@ -22,6 +23,7 @@ class DocumentChunkWithScore(DocumentChunk):
     score: float
 
 class Document(BaseModel):
+    id: Optional[str] = None
     text: str
     metadata: Optional[DocumentMetadata] = None
 
