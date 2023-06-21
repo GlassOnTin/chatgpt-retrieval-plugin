@@ -173,16 +173,18 @@ class WeaviateDataStore(DataStore):
                         doc_chunk_dict[key] = value
                     embedding = doc_chunk_dict.pop("embedding")
 
-                    # Call add_data_object without a uuid parameter
+                    # Remove the 'id' key from the dictionary
+                    doc_chunk_dict.pop('id', None)
+
                     new_uuid = batch.add_data_object(
                         data_object=doc_chunk_dict,
                         class_name=WEAVIATE_CLASS,
                         vector=embedding,
                     )
-                    # Use the returned UUID
                     doc_ids.append(new_uuid)
             batch.flush()
         return doc_ids
+
 
     async def _query(
         self,
