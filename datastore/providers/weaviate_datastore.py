@@ -175,9 +175,10 @@ class WeaviateDataStore(DataStore):
                     for key, value in metadata.dict().items():
                         doc_chunk_dict[key] = value
                     embedding = doc_chunk_dict.pop("embedding")
-
+                    uuid = generate_uuid5(doc_chunk, WEAVIATE_CLASS)
                     batch.add_data_object(
-                        data_object=doc_chunk_dict,
+                        uuid = uuid,
+                        data_object=doc_chunk_dict,                        
                         class_name=WEAVIATE_CLASS,
                         vector=embedding,
                     )
