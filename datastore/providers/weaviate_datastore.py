@@ -84,9 +84,6 @@ SCHEMA = {
     ],
 }
 
-
-
-
 def extract_schema_properties(schema):
     properties = schema["properties"]
 
@@ -175,14 +172,15 @@ class WeaviateDataStore(DataStore):
                     for key, value in metadata.dict().items():
                         doc_chunk_dict[key] = value
                     embedding = doc_chunk_dict.pop("embedding")
-                    uuid = generate_uuid5(doc_chunk, WEAVIATE_CLASS)
-                    batch.add_data_object(
-                        uuid = uuid,
-                        data_object=doc_chunk_dict,                        
+
+                    # Call add_data_object without a uuid parameter
+                    new_uuid = batch.add_data_object(
+                        data_object=doc_chunk_dict,
                         class_name=WEAVIATE_CLASS,
                         vector=embedding,
                     )
-                doc_ids.append(doc_id)
+                    # Use the returned UUID
+                    doc_ids.append(new_uuid)
             batch.flush()
         return doc_ids
 
