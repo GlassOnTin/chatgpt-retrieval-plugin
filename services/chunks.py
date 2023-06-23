@@ -124,7 +124,6 @@ def create_document_chunks(
     if not doc.text or doc.text.isspace():
         # Create a single chunk with the document's metadata
         doc_chunk = DocumentChunk(
-            index=0,
             text='',  # No text
             metadata=metadata,
         )
@@ -138,8 +137,9 @@ def create_document_chunks(
 
     # Assign each chunk a sequential number and create a DocumentChunk object
     for i, text_chunk in enumerate(text_chunks):
+        metadata.index = i
         doc_chunk = DocumentChunk(
-            index=i,
+            index=str(i),
             text=text_chunk,
             metadata=metadata,
         )

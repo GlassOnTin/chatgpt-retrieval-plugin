@@ -42,6 +42,16 @@ SCHEMA = {
             "description": "The unique id of the chunk",
         },
         {
+            "name": "document_id",
+            "dataType": ["string"],
+            "description": "The unique id of the chunk",
+        },
+        {
+            "name": "index",
+            "dataType": ["string"],
+            "description": "The sequential index of the chunk",
+        },
+        {
             "name": "title",
             "dataType": ["string"],
             "description": "A title for the document",
@@ -157,7 +167,7 @@ class WeaviateDataStore(DataStore):
 
     async def _upsert(self, chunks: Dict[str, List[DocumentChunk]]) -> List[str]:
         """
-        Takes in a list of list of document chunks and inserts them into the database.
+        Takes in a dict of list of document chunks and inserts them into the database.
         Return a list of document ids.
         """
         doc_ids = []

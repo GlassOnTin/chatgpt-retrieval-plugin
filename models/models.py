@@ -11,10 +11,10 @@ class DocumentMetadata(BaseModel):
 
 class DocumentChunkMetadata(DocumentMetadata):
     document_id: Optional[str] = None
+    index: Optional[str] = "0"
 
 class DocumentChunk(BaseModel):
-    id: Optional[str] = None
-    index: int
+    id: Optional[str] = None    
     text: str
     metadata: DocumentChunkMetadata
     embedding: Optional[List[float]] = None

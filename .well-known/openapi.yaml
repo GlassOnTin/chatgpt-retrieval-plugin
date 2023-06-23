@@ -204,6 +204,9 @@ components:
         document_id:
           title: Document Id
           type: string
+        index:
+          title: index
+          type: string
         title:
           title: Title
           type: string      
