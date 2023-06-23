@@ -11,6 +11,7 @@ from weaviate.util import generate_uuid5
 
 from datastore.datastore import DataStore
 from models.models import (
+    DocumentRelationship,
     DocumentChunk,
     DocumentChunkMetadata,
     DocumentMetadataFilter,
@@ -221,7 +222,9 @@ class WeaviateDataStore(DataStore):
                                 "artifact_type",
                                 "source",
                                 "created_at",
-                                "status"
+                                "status",
+                                "child",
+                                "parent"
                             ],
                         )
                         .with_hybrid(query=query.query, alpha=0.5, vector=query.embedding)
@@ -246,7 +249,9 @@ class WeaviateDataStore(DataStore):
                                 "artifact_type",
                                 "source",
                                 "created_at",
-                                "status"
+                                "status",
+                                "child",
+                                "parent"
                             ],
                         )
                         .with_hybrid(query=query.query, alpha=0.5, vector=query.embedding)
@@ -274,6 +279,10 @@ class WeaviateDataStore(DataStore):
             response = result["data"]["Get"][WEAVIATE_CLASS]
 
             for resp in response:
+                # Extract the IDs of the parent and child documents
+                parent_ids = [ref["beacon"].split("/")[-1] for ref in resp.get("parent", [])]
+                child_ids = [ref["beacon"].split("/")[-1] for ref in resp.get("child", [])]
+                
                 result = DocumentChunkWithScore(
                     id=resp["_additional"]["id"],
                     text=resp["text"],
@@ -285,6 +294,10 @@ class WeaviateDataStore(DataStore):
                         source=resp["source"] if resp["source"] else "",
                         created_at=resp["created_at"],
                         status=resp["status"] if resp["status"] else ""
+                    ),
+                    relationships=DocumentRelationship(  # Add this line
+                       parents=parent_ids,
+                       children=child_ids
                     )
                 )
                 query_results.append(result)

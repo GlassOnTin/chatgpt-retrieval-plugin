@@ -153,6 +153,8 @@ components:
           type: string
         metadata:
           $ref: "#/components/schemas/DocumentMetadata"
+        relationships:
+          $ref: "#/components/schemas/DocumentRelationship"
     DocumentMetadata:
       title: DocumentMetadata
       type: object
@@ -172,6 +174,20 @@ components:
         status:
           title: Status
           type: string
+    DocumentRelationship:
+      title: DocumentRelationship
+      type: object
+      properties:
+        parents:
+          title: Parents
+          type: array
+          items:
+            type: string
+        children:
+          title: Children
+          type: array
+          items:
+            type: string
     DocumentMetadataFilter:
       title: DocumentMetadataFilter
       type: object
@@ -229,7 +245,7 @@ components:
       title: DocumentChunk
       required:
         - text
-        - metadata        
+        - metadata
       type: object
       properties:
         id:

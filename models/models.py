@@ -9,6 +9,10 @@ class DocumentMetadata(BaseModel):
     created_at: Optional[str] = None
     status: Optional[str] = None
 
+class DocumentRelationship(BaseModel):
+    parents: Optional[List[str]] = None
+    children: Optional[List[str]] = None
+
 class DocumentChunkMetadata(DocumentMetadata):
     document_id: Optional[str] = None
     index: Optional[int] = 0
@@ -26,6 +30,7 @@ class Document(BaseModel):
     id: Optional[str] = None
     text: str
     metadata: Optional[DocumentMetadata] = None
+    relationships: Optional[DocumentRelationship] = None
 
 class DocumentWithChunks(Document):
     chunks: List[DocumentChunk]
