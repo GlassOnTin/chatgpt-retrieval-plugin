@@ -28,7 +28,7 @@ class DataStore(ABC):
             *[                
                 self.delete(
                     filter=DocumentMetadataFilter(
-                        id=document.id,
+                        document_id=document.id,
                     ),
                     delete_all=False,
                 )
