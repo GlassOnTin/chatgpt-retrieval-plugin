@@ -188,6 +188,7 @@ class WeaviateDataStore(DataStore):
                     metadata.document_id = doc_id
 
                     new_uuid = batch.add_data_object(
+                        uuid=doc_id,
                         data_object=doc_chunk_dict,
                         class_name=WEAVIATE_CLASS,
                         vector=embedding,
