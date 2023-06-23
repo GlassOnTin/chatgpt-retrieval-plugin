@@ -206,7 +206,7 @@ components:
           type: string
         index:
           title: index
-          type: string
+          type: number
         title:
           title: Title
           type: string      

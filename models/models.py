@@ -11,7 +11,7 @@ class DocumentMetadata(BaseModel):
 
 class DocumentChunkMetadata(DocumentMetadata):
     document_id: Optional[str] = None
-    index: Optional[str] = "0"
+    index: Optional[int] = 0
 
 class DocumentChunk(BaseModel):
     id: Optional[str] = None    

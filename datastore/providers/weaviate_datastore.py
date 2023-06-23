@@ -43,7 +43,7 @@ SCHEMA = {
         },
         {
             "name": "index",
-            "dataType": ["string"],
+            "dataType": ["int"],
             "description": "The sequential index of the chunk",
         },
         {

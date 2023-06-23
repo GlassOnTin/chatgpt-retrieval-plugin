@@ -139,7 +139,7 @@ def create_document_chunks(
     for i, text_chunk in enumerate(text_chunks):
         metadata.index = i
         doc_chunk = DocumentChunk(
-            index=str(i),
+            index=i,
             text=text_chunk,
             metadata=metadata,
         )
