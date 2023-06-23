@@ -42,15 +42,15 @@ SCHEMA = {
             "description": "The unique id of the chunk",
         },
         {
-            "name": "document_id",
-            "dataType": ["string"],
-            "description": "The unique id of the chunk",
-        },
-        {
             "name": "index",
             "dataType": ["string"],
             "description": "The sequential index of the chunk",
         },
+        {
+            "name": "document_id",
+            "dataType": ["string"],
+            "description": "The unique id of the document",
+        },        
         {
             "name": "title",
             "dataType": ["string"],
@@ -212,7 +212,7 @@ class WeaviateDataStore(DataStore):
                         self.client.query.get(
                             WEAVIATE_CLASS,
                             [
-                                "chunk_id",
+                                "index",
                                 "title",                                
                                 "text",
                                 "artifact_type",
@@ -236,7 +236,7 @@ class WeaviateDataStore(DataStore):
                         self.client.query.get(
                             WEAVIATE_CLASS,
                             [
-                                "chunk_id",
+                                "index",
                                 "title",
                                 "text",
                                 "artifact_type",
