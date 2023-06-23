@@ -182,9 +182,10 @@ class WeaviateDataStore(DataStore):
                     for key, value in metadata.dict().items():
                         doc_chunk_dict[key] = value
                     embedding = doc_chunk_dict.pop("embedding")
-
-                    # Remove the 'id' key from the dictionary
-                    doc_chunk_dict.pop('id', None)
+                    
+                    # Store the document's id in the DocumentChunkMetadata
+                    doc_id = doc_chunk_dict.pop('id', None)
+                    metadata.document_id = doc_id
 
                     new_uuid = batch.add_data_object(
                         data_object=doc_chunk_dict,
@@ -212,6 +213,7 @@ class WeaviateDataStore(DataStore):
                         self.client.query.get(
                             WEAVIATE_CLASS,
                             [
+                                "document_id",
                                 "index",
                                 "title",                                
                                 "text",
@@ -236,6 +238,7 @@ class WeaviateDataStore(DataStore):
                         self.client.query.get(
                             WEAVIATE_CLASS,
                             [
+                                "document_id",
                                 "index",
                                 "title",
                                 "text",
@@ -275,6 +278,7 @@ class WeaviateDataStore(DataStore):
                     text=resp["text"],
                     score=resp["_additional"]["score"],
                     metadata=DocumentChunkMetadata(
+                        document_id=resp["document_id"] if resp["document_id"] else ""
                         title=resp["title"] if resp["title"] else "",
                         artifact_type=resp["artifact_type"] if resp["artifact_type"] else "",
                         source=resp["source"] if resp["source"] else "",

@@ -176,6 +176,9 @@ components:
       title: DocumentMetadataFilter
       type: object
       properties:
+        document_id:
+          title: Document Id
+          type: string
         title:
           title: Title
           type: string
