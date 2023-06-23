@@ -278,7 +278,7 @@ class WeaviateDataStore(DataStore):
                     text=resp["text"],
                     score=resp["_additional"]["score"],
                     metadata=DocumentChunkMetadata(
-                        document_id=resp["document_id"] if resp["document_id"] else ""
+                        document_id=resp["document_id"] if resp["document_id"] else "",
                         title=resp["title"] if resp["title"] else "",
                         artifact_type=resp["artifact_type"] if resp["artifact_type"] else "",
                         source=resp["source"] if resp["source"] else "",
