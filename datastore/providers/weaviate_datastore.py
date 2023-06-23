@@ -390,7 +390,12 @@ class WeaviateDataStore(DataStore):
                 logger.debug(f"Operand: {operand}")
                 operands.append(operand)
 
+        # If there's only one operand, return it directly instead of using an 'And' operator
+        if len(operands) == 1:
+            return operands[0]
+
         return {"operator": "And", "operands": operands}
+
     
     async def add_reference(
         self,
