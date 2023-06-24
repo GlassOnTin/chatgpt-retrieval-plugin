@@ -9,6 +9,14 @@ class DocumentMetadata(BaseModel):
     created_at: Optional[str] = None
     status: Optional[str] = None
 
+class DocumentReference(BaseModel):
+    document_id: str
+    title: str
+
+class DocumentRelationship(BaseModel):
+    parents: Optional[List[DocumentReference]] = None
+    children: Optional[List[DocumentReference]] = None
+
 class DocumentRelationship(BaseModel):
     parents: Optional[List[str]] = None
     children: Optional[List[str]] = None

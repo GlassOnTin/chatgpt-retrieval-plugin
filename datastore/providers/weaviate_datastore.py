@@ -11,6 +11,7 @@ from weaviate.util import generate_uuid5
 
 from datastore.datastore import DataStore
 from models.models import (
+    DocumentReference,
     DocumentRelationship,
     DocumentChunk,
     DocumentChunkMetadata,
@@ -279,10 +280,9 @@ class WeaviateDataStore(DataStore):
             response = result["data"]["Get"][WEAVIATE_CLASS]
 
             for resp in response:
-                # Extract the IDs of the parent and child documents
-                parent_ids = [ref["beacon"]["id"] for ref in resp.get("parent", [])]
-                child_ids = [ref["beacon"]["id"] for ref in resp.get("child", [])]
-                
+                parents = [DocumentReference(id=ref["id"], title=ref["title"]) for ref in resp.get("parent", [])]
+                children = [DocumentReference(id=ref["id"], title=ref["title"]) for ref in resp.get("child", [])]
+                relationships = DocumentRelationship(parents=parents, children=children)
                 result = DocumentChunkWithScore(
                     id=resp["_additional"]["id"],
                     text=resp["text"],
@@ -295,10 +295,7 @@ class WeaviateDataStore(DataStore):
                         created_at=resp["created_at"],
                         status=resp["status"] if resp["status"] else ""
                     ),
-                    relationships=DocumentRelationship(  # Add this line
-                       parents=parent_ids,
-                       children=child_ids
-                    )
+                    relationships=relationships
                 )
                 query_results.append(result)
             return QueryResult(query=query.query, results=query_results)
