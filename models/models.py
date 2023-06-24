@@ -4,7 +4,7 @@ from typing import List, Optional
 
 class DocumentMetadata(BaseModel):
     title: Optional[str] = None
-    artifact_type: Optional[str] = None
+    type: Optional[str] = None
     source: Optional[str] = None
     created_at: Optional[str] = None
     status: Optional[str] = None

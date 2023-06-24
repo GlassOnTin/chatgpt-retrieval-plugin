@@ -160,8 +160,8 @@ components:
         title:
           title: Title
           type: string
-        artifact_type:
-          title: Artifact Type
+        type:
+          title: Document Type
           type: string
         source:
           title: Source
@@ -237,8 +237,8 @@ components:
         title:
           title: Title
           type: string      
-        artifact_type:
-          title: Artifact Type
+        type:
+          title: Type of document
           type: string
         source:
           title: Source

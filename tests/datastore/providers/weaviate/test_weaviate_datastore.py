@@ -55,7 +55,7 @@ def documents():
         "consectetur adipiscing elit",
         "sed do eiusmod tempor incididunt",
     ]
-    artifact_types = [
+    types = [
         "text",
         "email",
         "email"
@@ -77,7 +77,7 @@ def documents():
                 "metadata": {
                     "source": sources[i],
                     "name": names[i],
-                    "artifact_type": artifact_types[i],                    
+                    "type": types[i],                    
                     "created_at": created_at[i]                    
                 }
             }
