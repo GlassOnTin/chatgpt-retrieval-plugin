@@ -223,8 +223,8 @@ class WeaviateDataStore(DataStore):
                                 "source",
                                 "created_at",
                                 "status",
-                                "child { ... on OpenAIDocument { id, title } }",
-                                "parent { ... on OpenAIDocument { id, title } }"
+                                "child { ... on OpenAIDocument { document_id, title } }",
+                                "parent { ... on OpenAIDocument { document_id, title } }"
                             ],
                         )
                         .with_hybrid(query=query.query, alpha=0.5, vector=query.embedding)
@@ -250,10 +250,11 @@ class WeaviateDataStore(DataStore):
                                 "source",
                                 "created_at",
                                 "status",
-                                "child { ... on OpenAIDocument { id, title } }",
-                                "parent { ... on OpenAIDocument { id, title } }"
+                                "child { ... on OpenAIDocument { document_id, title } }",
+                                "parent { ... on OpenAIDocument { document_id, title } }"
                             ],
-                        )                        .with_hybrid(query=query.query, alpha=0.5, vector=query.embedding)
+                        )                        
+                        .with_hybrid(query=query.query, alpha=0.5, vector=query.embedding)
                         .with_where(filters_)
                         .with_limit(query.top_k)
                         .with_additional(["id","score"])
