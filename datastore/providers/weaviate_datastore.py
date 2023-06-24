@@ -5,9 +5,6 @@ from weaviate import Client
 import weaviate
 import os
 import uuid
-import re
-
-from weaviate.util import generate_uuid5
 
 from datastore.datastore import DataStore
 from models.models import (
