@@ -280,8 +280,8 @@ class WeaviateDataStore(DataStore):
             response = result["data"]["Get"][WEAVIATE_CLASS]
 
             for resp in response:
-                parents = [DocumentReference(id=ref["id"], title=ref["title"]) for ref in resp.get("parent", [])]
-                children = [DocumentReference(id=ref["id"], title=ref["title"]) for ref in resp.get("child", [])]
+                parents = [DocumentReference(id=ref["id"], title=ref["title"]) for ref in resp.get("parent", [])] if resp.get("parent") else []
+                children = [DocumentReference(id=ref["id"], title=ref["title"]) for ref in resp.get("child", [])] if resp.get("child") else []
                 relationships = DocumentRelationship(parents=parents, children=children)
                 result = DocumentChunkWithScore(
                     id=resp["_additional"]["id"],
