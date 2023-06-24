@@ -223,8 +223,8 @@ class WeaviateDataStore(DataStore):
                                 "source",
                                 "created_at",
                                 "status",
-                                "child { beacon }",
-                                "parent { beacon }"
+                                "child { beacon {id}  }",
+                                "parent { beacon {id} }"
                             ],
                         )
                         .with_hybrid(query=query.query, alpha=0.5, vector=query.embedding)
@@ -250,8 +250,8 @@ class WeaviateDataStore(DataStore):
                                 "source",
                                 "created_at",
                                 "status",
-                                "child  { beacon }",
-                                "parent { beacon }"
+                                "child  { beacon {id} }",
+                                "parent { beacon {id} }"
                             ],
                         )
                         .with_hybrid(query=query.query, alpha=0.5, vector=query.embedding)
@@ -280,8 +280,8 @@ class WeaviateDataStore(DataStore):
 
             for resp in response:
                 # Extract the IDs of the parent and child documents
-                parent_ids = [ref["beacon"].split("/")[-1] for ref in resp.get("parent", [])]
-                child_ids = [ref["beacon"].split("/")[-1] for ref in resp.get("child", [])]
+                parent_ids = [ref["beacon"]["id"] for ref in resp.get("parent", [])]
+                child_ids = [ref["beacon"]["id"] for ref in resp.get("child", [])]
                 
                 result = DocumentChunkWithScore(
                     id=resp["_additional"]["id"],
