@@ -223,8 +223,8 @@ class WeaviateDataStore(DataStore):
                                 "source",
                                 "created_at",
                                 "status",
-                                "child { beacon {id}  }",
-                                "parent { beacon {id} }"
+                                "child { ... on OpenAIDocument { id, title } }",
+                                "parent { ... on OpenAIDocument { id, title } }"
                             ],
                         )
                         .with_hybrid(query=query.query, alpha=0.5, vector=query.embedding)
@@ -244,17 +244,16 @@ class WeaviateDataStore(DataStore):
                             [
                                 "document_id",
                                 "index",
-                                "title",
+                                "title",                                
                                 "text",
                                 "artifact_type",
                                 "source",
                                 "created_at",
                                 "status",
-                                "child  { beacon {id} }",
-                                "parent { beacon {id} }"
+                                "child { ... on OpenAIDocument { id, title } }",
+                                "parent { ... on OpenAIDocument { id, title } }"
                             ],
-                        )
-                        .with_hybrid(query=query.query, alpha=0.5, vector=query.embedding)
+                        )                        .with_hybrid(query=query.query, alpha=0.5, vector=query.embedding)
                         .with_where(filters_)
                         .with_limit(query.top_k)
                         .with_additional(["id","score"])
