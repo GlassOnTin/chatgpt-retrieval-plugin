@@ -223,8 +223,8 @@ class WeaviateDataStore(DataStore):
                                 "source",
                                 "created_at",
                                 "status",
-                                "child { id, title }",
-                                "parent { id, title }"
+                                "child { beacon }",
+                                "parent { beacon }"
                             ],
                         )
                         .with_hybrid(query=query.query, alpha=0.5, vector=query.embedding)
@@ -250,8 +250,8 @@ class WeaviateDataStore(DataStore):
                                 "source",
                                 "created_at",
                                 "status",
-                                "child  { id, title }",
-                                "parent { id, title }"
+                                "child  { beacon }",
+                                "parent { beacon }"
                             ],
                         )
                         .with_hybrid(query=query.query, alpha=0.5, vector=query.embedding)
