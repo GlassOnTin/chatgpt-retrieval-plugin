@@ -1,7 +1,7 @@
 {
     "schema_version": "v1",
-    "name_for_model": "vector-graph document storage",
-    "name_for_human": "Vector Graph Memory",
+    "name_for_model": "GraphMemory",
+    "name_for_human": "Graph Memory",
     "description_for_model": "Plugin for a human and language model to break down large complex work into a graph structure of documents searchable as a vector database (Weaviate). Use it whenever a user needs to chat about anything that requires too large a context-window to be resolved in one chat.  For example, for an entire Agile project with backlogs; or to plan and write an entire novel by creating a document for the concept, child documents for a chapter plan, character list, themes, sub-plots.  Work together by suggesting further child tasks to solve the concept.",
     "description_for_human": "Vector Graph Memory",
     "auth": {
