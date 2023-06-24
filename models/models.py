@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import List, Optional
-from enum import Enum
+
 
 class DocumentMetadata(BaseModel):
     title: Optional[str] = None
@@ -9,30 +9,33 @@ class DocumentMetadata(BaseModel):
     created_at: Optional[str] = None
     status: Optional[str] = None
 
+
 class DocumentReference(BaseModel):
     document_id: str
     title: str
+
 
 class DocumentRelationship(BaseModel):
     parents: Optional[List[DocumentReference]] = None
     children: Optional[List[DocumentReference]] = None
 
-class DocumentRelationship(BaseModel):
-    parents: Optional[List[str]] = None
-    children: Optional[List[str]] = None
 
 class DocumentChunkMetadata(DocumentMetadata):
     document_id: Optional[str] = None
     index: Optional[int] = 0
 
+
 class DocumentChunk(BaseModel):
     id: Optional[str] = None    
     text: str
     metadata: DocumentChunkMetadata
+    relationships: Optional[DocumentRelationship] = None
     embedding: Optional[List[float]] = None
+
 
 class DocumentChunkWithScore(DocumentChunk):
     score: float
+
 
 class Document(BaseModel):
     id: Optional[str] = None
@@ -40,21 +43,26 @@ class Document(BaseModel):
     metadata: Optional[DocumentMetadata] = None
     relationships: Optional[DocumentRelationship] = None
 
+
 class DocumentWithChunks(Document):
     chunks: List[DocumentChunk]
+
 
 class DocumentMetadataFilter(DocumentMetadata):
     document_id: Optional[str] = None
     start_date: Optional[str] = None  # any date string format
     end_date: Optional[str] = None  # any date string format
 
+
 class Query(BaseModel):
     query: str
     filter: Optional[DocumentMetadataFilter] = None
     top_k: Optional[int] = 3
 
+
 class QueryWithEmbedding(Query):
     embedding: List[float]
+
 
 class QueryResult(BaseModel):
     query: str
