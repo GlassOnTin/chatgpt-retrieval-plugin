@@ -153,8 +153,6 @@ components:
           type: string
         metadata:
           $ref: "#/components/schemas/DocumentMetadata"
-        relationships:
-          $ref: "#/components/schemas/DocumentRelationship"
     DocumentMetadata:
       title: DocumentMetadata
       type: object
@@ -266,6 +264,8 @@ components:
           type: string
         metadata:
           $ref: "#/components/schemas/DocumentChunkMetadata"
+        relationships:
+          $ref: "#/components/schemas/DocumentRelationship"
         embedding:
           title: Embedding
           type: array
@@ -287,6 +287,8 @@ components:
           type: string
         metadata:
           $ref: "#/components/schemas/DocumentChunkMetadata"
+        relationships:
+          $ref: "#/components/schemas/DocumentRelationship"
         embedding:
           title: Embedding
           type: array

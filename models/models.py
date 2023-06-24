@@ -41,7 +41,6 @@ class Document(BaseModel):
     id: Optional[str] = None
     text: str
     metadata: Optional[DocumentMetadata] = None
-    relationships: Optional[DocumentRelationship] = None
 
 
 class DocumentWithChunks(Document):
