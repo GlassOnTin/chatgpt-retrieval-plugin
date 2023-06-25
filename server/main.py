@@ -184,7 +184,8 @@ async def add_reference(
         success = await datastore.add_reference(
             from_id=request.from_id,
             to_id=request.to_id,
-            relationship=request.relationship
+            from_relationship_type=request.from_relationship_type,
+            to_relationship_type=request.to_relationship_type
         )
         return ReferenceResponse(success=success)
     except Exception as e:
