@@ -168,9 +168,6 @@ components:
         source:
           title: Source
           type: string
-        created_at:
-          title: Created At
-          type: string
         status:
           title: Status
           type: string

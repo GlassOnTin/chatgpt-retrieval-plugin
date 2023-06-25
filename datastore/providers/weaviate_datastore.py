@@ -1,3 +1,4 @@
+import datetime
 import asyncio
 from typing import Dict, List, Optional
 from loguru import logger
@@ -219,6 +220,9 @@ class WeaviateDataStore(DataStore):
                     # Store the document's id in the DocumentChunkMetadata
                     doc_id = doc_chunk_dict.pop('id', None)
                     metadata.document_id = doc_id
+
+                    # Set the 'created_at' field to the current system UTC time
+                    doc_chunk_dict['created_at'] = datetime.datetime.now(datetime.timezone.utc).isoformat()
 
                     new_uuid = batch.add_data_object(
                         uuid=doc_id,
