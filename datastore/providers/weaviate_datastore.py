@@ -164,7 +164,7 @@ class WeaviateDataStore(DataStore):
         if not schema_relationship:
             new_schema_properties = extract_schema_properties(SCHEMA_RELATIONSHIP)
             logger.debug(
-                f"Creating collection Relationship with properties {new_schema_properties}"
+                f"Creating collection {SCHEMA_RELATIONSHIP} with properties {new_schema_properties}"
             )
             self.client.schema.create_class(SCHEMA_RELATIONSHIP)
 
