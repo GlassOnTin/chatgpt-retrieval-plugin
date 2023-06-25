@@ -527,7 +527,7 @@ class WeaviateDataStore(DataStore):
                 from_property_name="relationships",
                 to_uuid=relationship_id,
                 from_class_name=WEAVIATE_CLASS,
-                to_class_name="Relationship",
+                to_class_name=WEAVIATE_RELATIONSHIP_CLASS,
                 consistency_level=consistency_level
             )
             self.client.data_object.reference.delete(
@@ -535,12 +535,12 @@ class WeaviateDataStore(DataStore):
                 from_property_name="relationships",
                 to_uuid=relationship_id,
                 from_class_name=WEAVIATE_CLASS,
-                to_class_name="Relationship",
+                to_class_name=WEAVIATE_RELATIONSHIP_CLASS,
                 consistency_level=consistency_level
             )
 
             # Delete the Relationship object
-            self.client.data_object.delete(relationship_id, "Relationship")
+            self.client.data_object.delete(relationship_id, WEAVIATE_RELATIONSHIP_CLASS)
 
             return True
         except Exception as e:
