@@ -84,9 +84,9 @@ SCHEMA = {
         },
         {
             "name": "relationships",
-            "dataType": [f"{WEAVIATE_RELATIONSHIP_CLASS}[]"],
+            "dataType": [WEAVIATE_RELATIONSHIP_CLASS],
             "description": "The relationships between this document and others",
-        },
+        }
     ],
 }
 
