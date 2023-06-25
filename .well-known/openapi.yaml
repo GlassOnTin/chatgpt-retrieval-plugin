@@ -425,15 +425,19 @@ components:
     AddReferenceRequest:
       title: AddReferenceRequest
       required:
-        - parent_id
-        - child_id
+        - from_id
+        - to_id
+        - relationship
       type: object
       properties:
-        parent_id:
-          title: Parent ID
+        from_id:
+          title: From ID
           type: string
-        child_id:
-          title: Child ID
+        to_id:
+          title: To ID
+          type: string
+        relationship:
+          title: Relationship
           type: string
     AddReferenceResponse:
       title: AddReferenceResponse
@@ -447,15 +451,15 @@ components:
     DeleteReferenceRequest:
       title: DeleteReferenceRequest      
       required:
-        - parent_id
-        - child_id
+        - from_id
+        - to_id
       type: object
       properties:
-        parent_id:
-          title: Parent ID
+        from_id:
+          title: From ID
           type: string
-        child_id:
-          title: Child ID
+        to_id:
+          title: To ID
           type: string
     DeleteReferenceResponse:
       title: DeleteReferenceResponse

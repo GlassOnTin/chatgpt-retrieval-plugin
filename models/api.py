@@ -34,12 +34,14 @@ class DeleteResponse(BaseModel):
     success: bool
         
 class AddReferenceRequest(BaseModel):
-    parent_id: str
-    child_id: str
+    from_id: str
+    to_id: str
+    relationship: str
 
 class DeleteReferenceRequest(BaseModel):
-    parent_id: str
-    child_id: str
+    from_id: str
+    to_id: str
+
 
 class ReferenceResponse(BaseModel):
     success: bool

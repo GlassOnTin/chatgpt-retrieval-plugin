@@ -13,11 +13,12 @@ class DocumentMetadata(BaseModel):
 class DocumentReference(BaseModel):
     document_id: str
     title: str
+    relationship: str
 
 
 class DocumentRelationship(BaseModel):
-    parents: Optional[List[DocumentReference]] = None
-    children: Optional[List[DocumentReference]] = None
+    from_documents: Optional[List[DocumentReference]] = None
+    to_documents: Optional[List[DocumentReference]] = None
 
 
 class DocumentChunkMetadata(DocumentMetadata):

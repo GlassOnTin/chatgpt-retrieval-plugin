@@ -81,14 +81,14 @@ SCHEMA = {
             "description": "The current status of the planning item (To Do, In Progress, Done)",
         },
         {
-            "name": "child",
+            "name": "to_documents",
             "dataType": [WEAVIATE_CLASS],
-            "description": "The child items of this item",
+            "description": "The documents this item is linked to",
         },
         {
-            "name": "parent",
+            "name": "from_documents",
             "dataType": [WEAVIATE_CLASS],
-            "description": "The parent items of this item",
+            "description": "The documents linked from this item",
         }
     ],
 }
@@ -221,8 +221,8 @@ class WeaviateDataStore(DataStore):
                                 "source",
                                 "created_at",
                                 "status",
-                                "child { ... on OpenAIDocument { document_id, title } }",
-                                "parent { ... on OpenAIDocument { document_id, title } }"
+                                "to_documents { ... on OpenAIDocument { document_id, title, relationship } }",
+                                "from_documents { ... on OpenAIDocument { document_id, title, relationship } }"
                             ],
                         )
                         .with_hybrid(query=query.query, alpha=0.5, vector=query.embedding)
@@ -248,8 +248,8 @@ class WeaviateDataStore(DataStore):
                                 "source",
                                 "created_at",
                                 "status",
-                                "child { ... on OpenAIDocument { document_id, title } }",
-                                "parent { ... on OpenAIDocument { document_id, title } }"
+                                "to_documents { ... on OpenAIDocument { document_id, title, relationship } }",
+                                "from_documents { ... on OpenAIDocument { document_id, title, relationship } }"
                             ],
                         )                        
                         .with_hybrid(query=query.query, alpha=0.5, vector=query.embedding)
@@ -277,9 +277,9 @@ class WeaviateDataStore(DataStore):
             response = result["data"]["Get"][WEAVIATE_CLASS]
 
             for resp in response:
-                parents = [DocumentReference(document_id=ref["document_id"], title=ref["title"]) for ref in resp.get("parent", [])] if resp.get("parent") else []
-                children = [DocumentReference(document_id=ref["document_id"], title=ref["title"]) for ref in resp.get("child", [])] if resp.get("child") else []
-                relationships = DocumentRelationship(parents=parents, children=children)
+                from_documents = [DocumentReference(document_id=ref["document_id"], title=ref["title"], relationship=ref["relationship"]) for ref in resp.get("from_documents", [])] if resp.get("from_documents") else []
+                to_documents = [DocumentReference(document_id=ref["document_id"], title=ref["title"], relationship=ref["relationship"]) for ref in resp.get("to_documents", [])] if resp.get("to_documents") else []
+                relationships = DocumentRelationship(from_documents=from_documents, to_documents=to_documents)
                 result = DocumentChunkWithScore(
                     id=resp["_additional"]["id"],
                     text=resp["text"],
@@ -296,6 +296,7 @@ class WeaviateDataStore(DataStore):
                 )
                 query_results.append(result)
             return QueryResult(query=query.query, results=query_results)
+
 
         return await asyncio.gather(*[_single_query(query) for query in queries])
 
@@ -411,71 +412,74 @@ class WeaviateDataStore(DataStore):
     
     async def add_reference(
         self,
-        parent_id: str,
-        child_id: str,
+        from_id: str,
+        to_id: str,
+        relationship: str,
         consistency_level: weaviate.data.replication.ConsistencyLevel = weaviate.data.replication.ConsistencyLevel.ALL,
     ) -> bool:
         """
         Adds a two-way cross-reference between two documents properties
         """
-        logger.debug(f"Adding references between {parent_id} and {child_id}")
+        logger.debug(f"Adding references between {from_id} and {to_id}")
         try:
             # Add the first reference
             self.client.data_object.reference.add(
-                from_uuid=parent_id,
-                from_property_name="child",
-                to_uuid=child_id,
+                from_uuid=from_id,
+                from_property_name="to_documents",
+                to_uuid=to_id,
                 from_class_name=WEAVIATE_CLASS,
                 to_class_name=WEAVIATE_CLASS,
                 consistency_level=consistency_level
             )
             # Add the second reference
             self.client.data_object.reference.add(
-                from_uuid=child_id,
-                from_property_name="parent",
-                to_uuid=parent_id,
+                from_uuid=to_id,
+                from_property_name="from_documents",
+                to_uuid=from_id,
                 from_class_name=WEAVIATE_CLASS,
                 to_class_name=WEAVIATE_CLASS,
                 consistency_level=consistency_level
             )
             return True
         except Exception as e:
-            logger.error(f"Failed to add references between {parent_id} and {child_id}: {e}")
+            logger.error(f"Failed to add references between {from_id} and {to_id}: {e}")
             return False
+
 
     async def delete_reference(
         self,
-        parent_id: str,
-        child_id: str,
+        from_id: str,
+        to_id: str,
         consistency_level: weaviate.data.replication.ConsistencyLevel = weaviate.data.replication.ConsistencyLevel.ALL,
     ) -> bool:
         """
         Deletes a two-way cross-reference between two documents.
         """
-        logger.debug(f"Deleting references between {parent_id} and {child_id}")
+        logger.debug(f"Deleting references between {from_id} and {to_id}")
         try:
             # Delete the first reference
             self.client.data_object.reference.delete(
-                from_uuid=parent_id,
-                from_property_name="child",
-                to_uuid=child_id,
+                from_uuid=from_id,
+                from_property_name="to_documents",
+                to_uuid=to_id,
                 from_class_name=WEAVIATE_CLASS,
                 to_class_name=WEAVIATE_CLASS,
                 consistency_level=consistency_level            
             )
             # Delete the second reference
             self.client.data_object.reference.delete(
-                from_uuid=child_id,
-                from_property_name="parent",
-                to_uuid=parent_id,
+                from_uuid=to_id,
+                from_property_name="from_documents",
+                to_uuid=from_id,
                 from_class_name=WEAVIATE_CLASS,
                 to_class_name=WEAVIATE_CLASS,
                 consistency_level=consistency_level
             )
             return True
         except Exception as e:
-            logger.error(f"Failed to delete references between  {parent_id} to {child_id}: {e}")
+            logger.error(f"Failed to delete references between {from_id} to {to_id}: {e}")
             return False
+
 
     @staticmethod
     def _is_valid_weaviate_id(candidate_id: str) -> bool:

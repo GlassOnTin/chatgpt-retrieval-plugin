@@ -174,7 +174,7 @@ async def delete(
 @app.post(
     "/add_reference",
     response_model=ReferenceResponse,
-    description="Adds a reference, with first document as the parent, and second as the child.",
+    description="Adds a reference between two documents.",
 )
 async def add_reference(
     request: AddReferenceRequest = Body(...),
@@ -182,8 +182,9 @@ async def add_reference(
 ):
     try:
         success = await datastore.add_reference(
-            parent_id=request.parent_id,
-            child_id=request.child_id
+            from_id=request.from_id,
+            to_id=request.to_id,
+            relationship=request.relationship
         )
         return ReferenceResponse(success=success)
     except Exception as e:
@@ -193,7 +194,7 @@ async def add_reference(
 @app.post(
     "/delete_reference",
     response_model=ReferenceResponse,
-    description="Deletes a child reference, with first document as the parent, and second as the child.",
+    description="Deletes a reference between two documents.",
 )
 async def delete_reference(
     request: DeleteReferenceRequest = Body(...),
@@ -201,8 +202,8 @@ async def delete_reference(
 ):
     try:
         success = await datastore.delete_reference(
-            parent_id=request.parent_id,
-            child_id=request.child_id
+            from_id=request.from_id,
+            to_id=request.to_id
         )
         return ReferenceResponse(success=success)
     except Exception as e:
