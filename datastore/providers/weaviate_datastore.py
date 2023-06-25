@@ -115,24 +115,6 @@ def extract_schema_properties(schema):
 
 
 class WeaviateDataStore(DataStore):
-    def handle_errors(self, results: Optional[List[dict]]) -> List[str]:
-        if not self or not results:
-            return []
-
-        error_messages = []
-        for result in results:
-            if (
-                "result" not in result
-                or "errors" not in result["result"]
-                or "error" not in result["result"]["errors"]
-            ):
-                continue
-            for message in result["result"]["errors"]["error"]:
-                error_messages.append(message["message"])
-                logger.exception(message["message"])
-
-        return error_messages
-
     def __init__(self):
         auth_credentials = self._build_auth_credentials()
         url = f"{WEAVIATE_HOST}:{WEAVIATE_PORT}"
@@ -173,7 +155,14 @@ class WeaviateDataStore(DataStore):
             "description": "The relationships between this document and others",
         }
 
-        self.client.schema.property.create(WEAVIATE_CLASS, relationships_property)
+        # Get the schema of the OpenAIDocument class
+        schema = self.client.schema.get(WEAVIATE_CLASS)
+
+        # Check if the 'relationships' property already exists
+        if not any(prop for prop in schema["properties"] if prop["name"] == "relationships"):
+            # If the property doesn't exist, add it
+            self.client.schema.property.create(WEAVIATE_CLASS, relationships_property)
+
 
     @staticmethod
     def _build_auth_credentials():
@@ -534,8 +523,23 @@ class WeaviateDataStore(DataStore):
             logger.error(f"Failed to delete relationship between {from_id} and {to_id}: {e}")
             return False
 
+    def handle_errors(self, results: Optional[List[dict]]) -> List[str]:
+        if not self or not results:
+            return []
 
+        error_messages = []
+        for result in results:
+            if (
+                "result" not in result
+                or "errors" not in result["result"]
+                or "error" not in result["result"]["errors"]
+            ):
+                continue
+            for message in result["result"]["errors"]["error"]:
+                error_messages.append(message["message"])
+                logger.exception(message["message"])
 
+        return error_messages
 
     @staticmethod
     def _is_valid_weaviate_id(candidate_id: str) -> bool:
