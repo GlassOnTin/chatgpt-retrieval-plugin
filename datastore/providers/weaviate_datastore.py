@@ -255,8 +255,7 @@ class WeaviateDataStore(DataStore):
                                 "source",
                                 "created_at",
                                 "status",
-                                "to_documents { ... on " + WEAVIATE_RELATIONSHIP_CLASS + " { relationship_type, from_document { ... on " + WEAVIATE_CLASS + " { document_id, title } } } }",
-                                "from_documents { ... on " + WEAVIATE_RELATIONSHIP_CLASS + " { relationship_type, to_document { ... on " + WEAVIATE_CLASS + " { document_id, title } } } }"
+                                "relationships { ... on " + WEAVIATE_RELATIONSHIP_CLASS + " { relationship_type, from_document { ... on " + WEAVIATE_CLASS + " { document_id, title } }, to_document { ... on " + WEAVIATE_CLASS + " { document_id, title } } } }"
                             ],
                         )
                         .with_hybrid(query=query.query, alpha=0.5, vector=query.embedding)
@@ -282,8 +281,7 @@ class WeaviateDataStore(DataStore):
                                 "source",
                                 "created_at",
                                 "status",
-                                "to_documents { ... on Relationship { relationship_type, from_document { ... on OpenAIDocument { document_id, title } } } }",
-                                "from_documents { ... on Relationship { relationship_type, to_document { ... on OpenAIDocument { document_id, title } } } }"
+                                "relationships { ... on " + WEAVIATE_RELATIONSHIP_CLASS + " { relationship_type, from_document { ... on " + WEAVIATE_CLASS + " { document_id, title } }, to_document { ... on " + WEAVIATE_CLASS + " { document_id, title } } } }"
                             ],
                         )                        
                         .with_hybrid(query=query.query, alpha=0.5, vector=query.embedding)
