@@ -1,19 +1,19 @@
 {
-    "schema_version": "v1",
-    "name_for_model": "GraphMemory",
-    "name_for_human": "Graph Memory",
-    "description_for_model": "Plugin for a human and language model to break down large complex work into a graph structure of documents searchable as a vector database (Weaviate). Use it whenever a user needs to chat about anything that requires too large a context-window to be resolved in one chat.  For example, for an entire Agile project with backlogs; or to plan and write an entire novel by creating a document for the concept, child documents for a chapter plan, character list, themes, sub-plots.  Work together by suggesting further child tasks to solve the concept.",
-    "description_for_human": "Vector Graph Memory",
-    "auth": {
-      "type": "user_http",
-      "authorization_type": "bearer"
-    },
-    "api": {
-      "type": "openapi",
-      "url": "https://your-app-url.com/.well-known/openapi.yaml",
-      "has_user_authentication": false
-    },
-    "logo_url": "https://your-app-url.com/.well-known/logo.png",
-    "contact_email": "hello@contact.com", 
-    "legal_info_url": "hello@legal.com"
-  }
+  "schema_version": "v1",
+  "name_for_model": "GraphMemory",
+  "name_for_human": "Graph Memory",
+  "description_for_model": "GraphMemory is a plugin designed for managing large-scale projects in collaboration with a language model. It utilizes a graph-structured vector database (Weaviate) to handle and organize information beyond the model's context window. The plugin enables the creation, update, search, and deletion of documents in the database, each containing text and metadata. The text should be concise and within the model's context window, while metadata can include additional details about the document, such as its type, source, or related documents. The graph structure of the database allows for the creation of relationships between documents, useful for linking related documents together, such as chapters in a book, tasks in a project, or elements in a complex system. Strict adherence to the schema is crucial when using this plugin, with each function requiring specific parameters. For instance, creating or updating a document requires the provision of text and metadata, while querying the database allows for the specification of search criteria to refine results. The primary goal of this plugin is to facilitate the management of large volumes of information in a structured and searchable manner, aiding in the breakdown of complex tasks into manageable pieces, and maintaining a coherent and organized tracking of all pieces.",
+  "description_for_human": "Vector Graph Memory",
+  "auth": {
+    "type": "user_http",
+    "authorization_type": "bearer"
+  },
+  "api": {
+    "type": "openapi",
+    "url": "https://your-app-url.com/.well-known/openapi.yaml",
+    "has_user_authentication": false
+  },
+  "logo_url": "https://your-app-url.com/.well-known/logo.png",
+  "contact_email": "hello@contact.com", 
+  "legal_info_url": "hello@legal.com"
+}
