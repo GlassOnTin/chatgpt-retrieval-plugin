@@ -27,7 +27,6 @@ WEAVIATE_PASSWORD = os.environ.get("WEAVIATE_PASSWORD", None)
 WEAVIATE_SCOPES = os.environ.get("WEAVIATE_SCOPES", "offline_access")
 WEAVIATE_CLASS = os.environ.get("WEAVIATE_CLASS", "OpenAIDocument")
 WEAVIATE_RELATIONSHIP_CLASS = os.environ.get("WEAVIATE_RELATIONSHIP_CLASS", "OpenAIRelationship")
-WEAVIATE_RESET_SCHEMA = os.environ.get("WEAVIATE_RESET_SCHEMA", None)
 
 WEAVIATE_BATCH_SIZE = int(os.environ.get("WEAVIATE_BATCH_SIZE", 20))
 WEAVIATE_BATCH_DYNAMIC = os.environ.get("WEAVIATE_BATCH_DYNAMIC", False)
@@ -162,7 +161,7 @@ class WeaviateDataStore(DataStore):
         except weaviate.exceptions.UnexpectedStatusCodeException:
             schema_relationship = None            
 
-        if not schema_relationship or WEAVIATE_RESET_SCHEMA:
+        if not schema_relationship:
             new_schema_properties = extract_schema_properties(SCHEMA_RELATIONSHIP)
             logger.debug(
                 f"Creating collection Relationship with properties {new_schema_properties}"
@@ -175,7 +174,7 @@ class WeaviateDataStore(DataStore):
         except weaviate.exceptions.UnexpectedStatusCodeException:
             schema = None            
 
-        if not schema or WEAVIATE_RESET_SCHEMA:
+        if not schema:
             new_schema_properties = extract_schema_properties(SCHEMA)
             logger.debug(
                 f"Creating collection {WEAVIATE_CLASS} with properties {new_schema_properties}"
