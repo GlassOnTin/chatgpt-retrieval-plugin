@@ -111,6 +111,7 @@ paths:
       security:
         - HTTPBearer: []
 
+
   /delete_reference:
     post:
       summary: Delete Reference
@@ -137,6 +138,7 @@ paths:
                 $ref: "#/components/schemas/HTTPValidationError"
       security:
         - HTTPBearer: []
+
 components:
   schemas:
     Document:
@@ -176,23 +178,26 @@ components:
       title: DocumentReference
       type: object
       properties:
-        id:
-          title: Id
+        document_id:
+          title: DocumentId
           type: string
         title:
           title: Title
+          type: string
+        relationship:
+          title: Relationship
           type: string
     DocumentRelationship:
       title: DocumentRelationship
       type: object
       properties:
-        parents:
-          title: Parents
+        from_documents:
+          title: FromDocuments
           type: array
           items:
             $ref: "#/components/schemas/DocumentReference"
-        children:
-          title: Children
+        to_documents:
+          title: ToDocuments
           type: array
           items:
             $ref: "#/components/schemas/DocumentReference"
@@ -206,7 +211,7 @@ components:
         title:
           title: Title
           type: string
-        artifact_type:
+        type:
           title: Artifact Type
           type: string
         source:
@@ -427,7 +432,8 @@ components:
       required:
         - from_id
         - to_id
-        - relationship
+        - from_relationship_type
+        - to_relationship_type
       type: object
       properties:
         from_id:
@@ -436,8 +442,11 @@ components:
         to_id:
           title: To ID
           type: string
-        relationship:
-          title: Relationship
+        from_relationship_type:
+          title: From Relationship Type
+          type: string
+        to_relationship_type:
+          title: To Relationship Type
           type: string
     AddReferenceResponse:
       title: AddReferenceResponse

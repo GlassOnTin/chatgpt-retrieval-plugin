@@ -2,6 +2,12 @@ import weaviate
 client = weaviate.Client("http://weaviate-uy01:8080")
 client.data_object.get()
 
+
+client.schema.get()
+
+#DELETE ALL, restart the server afterwards
+#client.schema.delete_all()
+
 QUERY="text"
 result = (
     client.query.get(
@@ -27,8 +33,6 @@ response = result["data"]["Get"]["OpenAIDocument"]
 print(response)
 ###################################################################
 
-#DELETE ALL, restart the server afterwards
-#client.schema.delete_all()
 
 client.data_object.reference.add(
   "0b56104a-fc38-5556-a4ac-b17294f9383b",

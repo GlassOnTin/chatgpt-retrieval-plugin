@@ -25,6 +25,7 @@ WEAVIATE_USERNAME = os.environ.get("WEAVIATE_USERNAME", None)
 WEAVIATE_PASSWORD = os.environ.get("WEAVIATE_PASSWORD", None)
 WEAVIATE_SCOPES = os.environ.get("WEAVIATE_SCOPES", "offline_access")
 WEAVIATE_CLASS = os.environ.get("WEAVIATE_CLASS", "OpenAIDocument")
+WEAVIATE_RELATIONSHIP_CLASS = os.environ.get("WEAVIATE_RELATIONSHIP_CLASS", "OpenAIRelationship")
 
 WEAVIATE_BATCH_SIZE = int(os.environ.get("WEAVIATE_BATCH_SIZE", 20))
 WEAVIATE_BATCH_DYNAMIC = os.environ.get("WEAVIATE_BATCH_DYNAMIC", False)
@@ -56,9 +57,9 @@ SCHEMA = {
             "description": "A title for the document",
         },
         {
-            "name": "artifact_type",
+            "name": "type",
             "dataType": ["string"],
-            "description": "The type of artifact required for the work item (Concept, Chapter Plan, Plot Point, Character Development, Writing Task)",
+            "description": "The type of artifact required for the work item",
         },
         {
             "name": "text",
@@ -81,17 +82,35 @@ SCHEMA = {
             "description": "The current status of the planning item (To Do, In Progress, Done)",
         },
         {
-            "name": "to_documents",
+            "name": "relationships",
+            "dataType": [WEAVIATE_RELATIONSHIP_CLASS],
+            "description": "The relationships between this document and others",
+        },
+    ],
+}
+
+SCHEMA_RELATIONSHIP = {
+    "class": WEAVIATE_RELATIONSHIP_CLASS,
+    "description": "The relationship class",
+    "properties": [
+        {
+            "name": "from_document",
             "dataType": [WEAVIATE_CLASS],
-            "description": "The documents this item is linked to",
+            "description": "The document from which this relationship originates",
         },
         {
-            "name": "from_documents",
+            "name": "to_document",
             "dataType": [WEAVIATE_CLASS],
-            "description": "The documents linked from this item",
+            "description": "The document to which this relationship points",
+        },
+        {
+            "name": "relationship_type",
+            "dataType": ["string"],
+            "description": "The type of this relationship",
         }
     ],
 }
+
 
 def extract_schema_properties(schema):
     properties = schema["properties"]
@@ -135,6 +154,20 @@ class WeaviateDataStore(DataStore):
             num_workers=WEAVIATE_BATCH_NUM_WORKERS,
         )
 
+        # Check and create Relationship class
+        try:            
+            schema_relationship = self.client.schema.get(WEAVIATE_RELATIONSHIP_CLASS)
+        except weaviate.exceptions.UnexpectedStatusCodeException:
+            schema_relationship = None            
+
+        if not schema_relationship:
+            new_schema_properties = extract_schema_properties(SCHEMA_RELATIONSHIP)
+            logger.debug(
+                f"Creating collection Relationship with properties {new_schema_properties}"
+            )
+            self.client.schema.create_class(SCHEMA_RELATIONSHIP)
+
+        # Check and create WEAVIATE_CLASS
         try:            
             schema = self.client.schema.get(WEAVIATE_CLASS)
         except weaviate.exceptions.UnexpectedStatusCodeException:
@@ -154,6 +187,7 @@ class WeaviateDataStore(DataStore):
                 f"Found index {WEAVIATE_CLASS} with properties {current_schema_properties}"
             )
             logger.debug("Will reuse this schema")
+
 
     @staticmethod
     def _build_auth_credentials():
@@ -217,12 +251,12 @@ class WeaviateDataStore(DataStore):
                                 "index",
                                 "title",                                
                                 "text",
-                                "artifact_type",
+                                "type",
                                 "source",
                                 "created_at",
                                 "status",
-                                "to_documents { ... on OpenAIDocument { document_id, title, relationship } }",
-                                "from_documents { ... on OpenAIDocument { document_id, title, relationship } }"
+                                "to_documents { ... on Relationship { relationship_type, from_document { ... on OpenAIDocument { document_id, title } } } }",
+                                "from_documents { ... on Relationship { relationship_type, to_document { ... on OpenAIDocument { document_id, title } } } }"
                             ],
                         )
                         .with_hybrid(query=query.query, alpha=0.5, vector=query.embedding)
@@ -244,12 +278,12 @@ class WeaviateDataStore(DataStore):
                                 "index",
                                 "title",                                
                                 "text",
-                                "artifact_type",
+                                "type",
                                 "source",
                                 "created_at",
                                 "status",
-                                "to_documents { ... on OpenAIDocument { document_id, title, relationship } }",
-                                "from_documents { ... on OpenAIDocument { document_id, title, relationship } }"
+                                "to_documents { ... on Relationship { relationship_type, from_document { ... on OpenAIDocument { document_id, title } } } }",
+                                "from_documents { ... on Relationship { relationship_type, to_document { ... on OpenAIDocument { document_id, title } } } }"
                             ],
                         )                        
                         .with_hybrid(query=query.query, alpha=0.5, vector=query.embedding)
@@ -277,8 +311,8 @@ class WeaviateDataStore(DataStore):
             response = result["data"]["Get"][WEAVIATE_CLASS]
 
             for resp in response:
-                from_documents = [DocumentReference(document_id=ref["document_id"], title=ref["title"], relationship=ref["relationship"]) for ref in resp.get("from_documents", [])] if resp.get("from_documents") else []
-                to_documents = [DocumentReference(document_id=ref["document_id"], title=ref["title"], relationship=ref["relationship"]) for ref in resp.get("to_documents", [])] if resp.get("to_documents") else []
+                from_documents = [DocumentReference(document_id=ref["document_id"], title=ref["title"], relationship=ref["relationship_type"]) for ref in resp.get("from_documents", [])] if resp.get("from_documents") else []
+                to_documents = [DocumentReference(document_id=ref["document_id"], title=ref["title"], relationship=ref["relationship_type"]) for ref in resp.get("to_documents", [])] if resp.get("to_documents") else []
                 relationships = DocumentRelationship(from_documents=from_documents, to_documents=to_documents)
                 result = DocumentChunkWithScore(
                     id=resp["_additional"]["id"],
@@ -287,7 +321,7 @@ class WeaviateDataStore(DataStore):
                     metadata=DocumentChunkMetadata(
                         document_id=resp["document_id"] if resp["document_id"] else "",
                         title=resp["title"] if resp["title"] else "",
-                        type=resp["artifact_type"] if resp["artifact_type"] else "",
+                        type=resp["type"] if resp["type"] else "",
                         source=resp["source"] if resp["source"] else "",
                         created_at=resp["created_at"],
                         status=resp["status"] if resp["status"] else ""
@@ -414,7 +448,8 @@ class WeaviateDataStore(DataStore):
         self,
         from_id: str,
         to_id: str,
-        relationship: str,
+        from_relationship_type: str,
+        to_relationship_type: str,
         consistency_level: weaviate.data.replication.ConsistencyLevel = weaviate.data.replication.ConsistencyLevel.ALL,
     ) -> bool:
         """
@@ -422,24 +457,46 @@ class WeaviateDataStore(DataStore):
         """
         logger.debug(f"Adding references between {from_id} and {to_id}")
         try:
-            # Add the first reference
+            # Create a Relationship object for the from_relationship_type
+            from_relationship_id = self.client.data_object.create(
+                {
+                    "from_document": from_id,
+                    "to_document": to_id,
+                    "relationship_type": from_relationship_type,
+                },
+                WEAVIATE_RELATIONSHIP_CLASS,
+            )
+
+            # Add a reference from the from_document to the from_relationship_type Relationship object
             self.client.data_object.reference.add(
                 from_uuid=from_id,
-                from_property_name="to_documents",
-                to_uuid=to_id,
+                from_property_name="relationships",
+                to_uuid=from_relationship_id,
                 from_class_name=WEAVIATE_CLASS,
-                to_class_name=WEAVIATE_CLASS,
+                to_class_name=WEAVIATE_RELATIONSHIP_CLASS,
                 consistency_level=consistency_level
             )
-            # Add the second reference
+
+            # Create a Relationship object for the to_relationship_type
+            to_relationship_id = self.client.data_object.create(
+                {
+                    "from_document": to_id,
+                    "to_document": from_id,
+                    "relationship_type": to_relationship_type,
+                },
+                WEAVIATE_RELATIONSHIP_CLASS,
+            )
+
+            # Add a reference from the to_document to the to_relationship_type Relationship object
             self.client.data_object.reference.add(
                 from_uuid=to_id,
-                from_property_name="from_documents",
-                to_uuid=from_id,
+                from_property_name="relationships",
+                to_uuid=to_relationship_id,
                 from_class_name=WEAVIATE_CLASS,
-                to_class_name=WEAVIATE_CLASS,
+                to_class_name=WEAVIATE_RELATIONSHIP_CLASS,
                 consistency_level=consistency_level
             )
+
             return True
         except Exception as e:
             logger.error(f"Failed to add references between {from_id} and {to_id}: {e}")
@@ -453,32 +510,44 @@ class WeaviateDataStore(DataStore):
         consistency_level: weaviate.data.replication.ConsistencyLevel = weaviate.data.replication.ConsistencyLevel.ALL,
     ) -> bool:
         """
-        Deletes a two-way cross-reference between two documents.
+        Deletes a Relationship object and its references to the two documents.
         """
-        logger.debug(f"Deleting references between {from_id} and {to_id}")
+        logger.debug(f"Deleting relationship between {from_id} and {to_id}")
         try:
-            # Delete the first reference
+            # Find the Relationship object
+            relationship_id = self.find_relationship(from_id, to_id)
+
+            if relationship_id is None:
+                logger.error(f"No relationship found between {from_id} and {to_id}")
+                return False
+
+            # Delete the references from the documents to the Relationship object
             self.client.data_object.reference.delete(
                 from_uuid=from_id,
-                from_property_name="to_documents",
-                to_uuid=to_id,
+                from_property_name="relationships",
+                to_uuid=relationship_id,
                 from_class_name=WEAVIATE_CLASS,
-                to_class_name=WEAVIATE_CLASS,
-                consistency_level=consistency_level            
-            )
-            # Delete the second reference
-            self.client.data_object.reference.delete(
-                from_uuid=to_id,
-                from_property_name="from_documents",
-                to_uuid=from_id,
-                from_class_name=WEAVIATE_CLASS,
-                to_class_name=WEAVIATE_CLASS,
+                to_class_name="Relationship",
                 consistency_level=consistency_level
             )
+            self.client.data_object.reference.delete(
+                from_uuid=to_id,
+                from_property_name="relationships",
+                to_uuid=relationship_id,
+                from_class_name=WEAVIATE_CLASS,
+                to_class_name="Relationship",
+                consistency_level=consistency_level
+            )
+
+            # Delete the Relationship object
+            self.client.data_object.delete(relationship_id, "Relationship")
+
             return True
         except Exception as e:
-            logger.error(f"Failed to delete references between {from_id} to {to_id}: {e}")
+            logger.error(f"Failed to delete relationship between {from_id} and {to_id}: {e}")
             return False
+
+
 
 
     @staticmethod

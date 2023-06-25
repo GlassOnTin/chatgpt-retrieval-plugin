@@ -36,7 +36,9 @@ class DeleteResponse(BaseModel):
 class AddReferenceRequest(BaseModel):
     from_id: str
     to_id: str
-    relationship: str
+    from_relationship_type: str
+    to_relationship_type: str
+
 
 class DeleteReferenceRequest(BaseModel):
     from_id: str
