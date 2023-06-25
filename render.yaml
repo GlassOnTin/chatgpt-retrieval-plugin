@@ -1,8 +1,8 @@
 services:
   # FastAPI Server
   - type: web
-    name: retrieval-plugin-server 
-    region: oregon
+    name: graph-vector-memory-plugin-server 
+    region: frankfurt
     plan: starter
     env: docker
     dockerfilePath: ./Dockerfile
@@ -25,7 +25,7 @@ services:
   # Weaviate vector database
   - type: pserv
     name: weaviate
-    region: oregon
+    region: frankfurt
     plan: starter
     env: docker
     dockerfilePath: ./Dockerfile.weaviate
