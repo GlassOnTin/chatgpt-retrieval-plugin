@@ -81,11 +81,6 @@ SCHEMA = {
             "name": "status",
             "dataType": ["string"],
             "description": "The current status of the planning item (To Do, In Progress, Done)",
-        },
-        {
-            "name": "relationships",
-            "dataType": [WEAVIATE_RELATIONSHIP_CLASS],
-            "description": "The relationships between this document and others",
         }
     ],
 }
@@ -140,9 +135,7 @@ class WeaviateDataStore(DataStore):
 
     def __init__(self):
         auth_credentials = self._build_auth_credentials()
-
         url = f"{WEAVIATE_HOST}:{WEAVIATE_PORT}"
-
         logger.debug(
             f"Connecting to weaviate instance at {url} with credential type {type(auth_credentials).__name__}"
         )
@@ -154,41 +147,33 @@ class WeaviateDataStore(DataStore):
             timeout_retries=WEAVIATE_BATCH_TIMEOUT_RETRIES,
             num_workers=WEAVIATE_BATCH_NUM_WORKERS,
         )
+        self._initialize_schema()
 
-        # Check and create Relationship class
+    def _initialize_schema(self):
+        self._create_class_if_not_exists(WEAVIATE_CLASS, SCHEMA)
+        self._create_class_if_not_exists(WEAVIATE_RELATIONSHIP_CLASS, SCHEMA_RELATIONSHIP)
+        self._add_relationships_property_to_document_class()
+
+    def _create_class_if_not_exists(self, class_name, schema):
         try:            
-            schema_relationship = self.client.schema.get(WEAVIATE_RELATIONSHIP_CLASS)
+            existing_schema = self.client.schema.get(class_name)
         except weaviate.exceptions.UnexpectedStatusCodeException:
-            schema_relationship = None            
-
-        if not schema_relationship:
-            new_schema_properties = extract_schema_properties(SCHEMA_RELATIONSHIP)
+            existing_schema = None
+        if not existing_schema:
+            new_schema_properties = extract_schema_properties(schema)
             logger.debug(
-                f"Creating collection {WEAVIATE_RELATIONSHIP_CLASS} with properties {new_schema_properties}"
+                f"Creating collection {class_name} with properties {new_schema_properties}"
             )
-            self.client.schema.create_class(SCHEMA_RELATIONSHIP)
+            self.client.schema.create_class(schema)
 
-        # Check and create WEAVIATE_CLASS
-        try:            
-            schema = self.client.schema.get(WEAVIATE_CLASS)
-        except weaviate.exceptions.UnexpectedStatusCodeException:
-            schema = None            
+    def _add_relationships_property_to_document_class(self):
+        relationships_property = {
+            "dataType": [WEAVIATE_RELATIONSHIP_CLASS],
+            "name": "relationships",
+            "description": "The relationships between this document and others",
+        }
 
-        if not schema:
-            new_schema_properties = extract_schema_properties(SCHEMA)
-            logger.debug(
-                f"Creating collection {WEAVIATE_CLASS} with properties {new_schema_properties}"
-            )
-            self.client.schema.create_class(SCHEMA)
-        else:
-            current_schema = schema
-            current_schema_properties = extract_schema_properties(current_schema)
-
-            logger.debug(
-                f"Found index {WEAVIATE_CLASS} with properties {current_schema_properties}"
-            )
-            logger.debug("Will reuse this schema")
-
+        self.client.schema.property.create(WEAVIATE_CLASS, relationships_property)
 
     @staticmethod
     def _build_auth_credentials():
