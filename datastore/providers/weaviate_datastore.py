@@ -294,6 +294,7 @@ class WeaviateDataStore(DataStore):
             response = result["data"]["Get"][WEAVIATE_CLASS]
 
             for resp in response:
+                print(f"Processing document chunk: {resp}")
                 from_documents = [DocumentReference(document_id=ref["document_id"], title=ref["title"], relationship=ref["relationship_type"]) for ref in resp.get("from_documents", [])] if resp.get("from_documents") else []
                 to_documents = [DocumentReference(document_id=ref["document_id"], title=ref["title"], relationship=ref["relationship_type"]) for ref in resp.get("to_documents", [])] if resp.get("to_documents") else []
                 relationships = DocumentRelationship(from_documents=from_documents, to_documents=to_documents)
@@ -313,6 +314,7 @@ class WeaviateDataStore(DataStore):
                 )
                 query_results.append(result)
             return QueryResult(query=query.query, results=query_results)
+
 
 
         return await asyncio.gather(*[_single_query(query) for query in queries])
@@ -454,16 +456,6 @@ class WeaviateDataStore(DataStore):
                 WEAVIATE_RELATIONSHIP_CLASS
             )
 
-            # Add a reference from the from_document to the from_relationship_type Relationship object
-            self.client.data_object.reference.add(
-                from_uuid=from_id,
-                from_property_name="relationships",
-                to_uuid=from_relationship_id,
-                from_class_name=WEAVIATE_CLASS,
-                to_class_name=WEAVIATE_RELATIONSHIP_CLASS,
-                consistency_level=consistency_level
-            )
-
             # Create a Relationship object for the to_relationship_type
             to_relationship_id = self. client.data_object.create(
                 {
@@ -476,6 +468,16 @@ class WeaviateDataStore(DataStore):
                     "relationship_type": "Related"
                 },
                 WEAVIATE_RELATIONSHIP_CLASS
+            )
+
+            # Add a reference from the from_document to the from_relationship_type Relationship object
+            self.client.data_object.reference.add(
+                from_uuid=from_id,
+                from_property_name="relationships",
+                to_uuid=from_relationship_id,
+                from_class_name=WEAVIATE_CLASS,
+                to_class_name=WEAVIATE_RELATIONSHIP_CLASS,
+                consistency_level=consistency_level
             )
 
             # Add a reference from the to_document to the to_relationship_type Relationship object
