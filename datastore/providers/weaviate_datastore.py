@@ -155,13 +155,22 @@ class WeaviateDataStore(DataStore):
             "description": "The relationships between this document and others",
         }
 
-        # Get the schema of the OpenAIDocument class
-        schema = self.client.schema.get(WEAVIATE_CLASS)
+        logger.debug(
+            f"Adding relationships property to collection {WEAVIATE_CLASS} with properties {relationships_property}"
+        )
+        
+        try: 
+            # Get the schema of the OpenAIDocument class
+            schema = self.client.schema.get(WEAVIATE_CLASS)
+        except weaviate.exceptions.UnexpectedStatusCodeException:
+            logger.debug(f"Failed to get {WEAVIATE_CLASS}")   
 
         # Check if the 'relationships' property already exists
         if not any(prop for prop in schema["properties"] if prop["name"] == "relationships"):
             # If the property doesn't exist, add it
             self.client.schema.property.create(WEAVIATE_CLASS, relationships_property)
+        else:
+            self.client.schema.property.get(WEAVIATE_CLASS, "relationships")
 
 
     @staticmethod
@@ -434,13 +443,17 @@ class WeaviateDataStore(DataStore):
         logger.debug(f"Adding references between {from_id} and {to_id}")
         try:
             # Create a Relationship object for the from_relationship_type
-            from_relationship_id = self.client.data_object.create(
+            from_relationship_id = self. client.data_object.create(
                 {
-                    "from_document": from_id,
-                    "to_document": to_id,
-                    "relationship_type": from_relationship_type,
-                },
-                WEAVIATE_RELATIONSHIP_CLASS,
+                    "from_document": [{
+                        "beacon": f"weaviate://localhost/{from_id}"
+                    }],
+                    "to_document": [{
+                        "beacon": f"weaviate://localhost/{to_id}"
+                    }],
+                    "relationship_type": "Related"
+                }, 
+                WEAVIATE_RELATIONSHIP_CLASS
             )
 
             # Add a reference from the from_document to the from_relationship_type Relationship object
@@ -454,13 +467,17 @@ class WeaviateDataStore(DataStore):
             )
 
             # Create a Relationship object for the to_relationship_type
-            to_relationship_id = self.client.data_object.create(
+            to_relationship_id = self. client.data_object.create(
                 {
-                    "from_document": to_id,
-                    "to_document": from_id,
-                    "relationship_type": to_relationship_type,
+                    "from_document": [{
+                        "beacon": f"weaviate://localhost/{from_id}"
+                    }],
+                    "to_document": [{
+                        "beacon": f"weaviate://localhost/{to_id}"
+                    }],
+                    "relationship_type": "Related"
                 },
-                WEAVIATE_RELATIONSHIP_CLASS,
+                WEAVIATE_RELATIONSHIP_CLASS
             )
 
             # Add a reference from the to_document to the to_relationship_type Relationship object
