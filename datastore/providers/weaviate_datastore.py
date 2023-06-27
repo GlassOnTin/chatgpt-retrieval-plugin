@@ -542,6 +542,47 @@ class WeaviateDataStore(DataStore):
             logger.error(f"Failed to delete relationship between {from_id} and {to_id}: {e}")
             return False
 
+    def find_relationship(self, from_id: str, to_id: str) -> Optional[str]:
+        """
+        Find the relationship between two documents based on their IDs.
+
+        Args:
+            from_id (str): ID of the first document.
+            to_id (str): ID of the second document.
+
+        Returns:
+            Optional[str]: ID of the relationship if it exists, None otherwise.
+        """
+        # Query Weaviate to find the relationship
+        result = self.client.query.get(
+            WEAVIATE_RELATIONSHIP_CLASS,
+            ["id"],
+        ).with_where(
+            {
+                "operator": "And",
+                "operands": [
+                    {
+                        "path": ["from_document", "id"],
+                        "operator": "Equal",
+                        "valueString": from_id,
+                    },
+                    {
+                        "path": ["to_document", "id"],
+                        "operator": "Equal",
+                        "valueString": to_id,
+                    },
+                ],
+            }
+        ).do()
+
+        # If a relationship is found, return its ID
+        if "data" in result and WEAVIATE_RELATIONSHIP_CLASS in result["data"]["Get"] and result["data"]["Get"][WEAVIATE_RELATIONSHIP_CLASS]:
+            return result["data"]["Get"][WEAVIATE_RELATIONSHIP_CLASS][0]["id"]
+
+        # If no relationship is found, return None
+        return None
+
+
     def handle_errors(self, results: Optional[List[dict]]) -> List[str]:
         if not self or not results:
             return []
