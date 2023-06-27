@@ -295,8 +295,12 @@ class WeaviateDataStore(DataStore):
 
             for resp in response:
                 print(f"Processing document chunk: {resp}")
-                from_documents = [DocumentReference(document_id=ref["document_id"], title=ref["title"], relationship=ref["relationship_type"]) for ref in resp.get("from_documents", [])] if resp.get("from_documents") else []
-                to_documents = [DocumentReference(document_id=ref["document_id"], title=ref["title"], relationship=ref["relationship_type"]) for ref in resp.get("to_documents", [])] if resp.get("to_documents") else []
+                from_documents = []
+                to_documents = []
+                if resp.get("relationships"):
+                    for relationship in resp["relationships"]:
+                        from_documents.extend([DocumentReference(document_id=ref["document_id"], title=ref["title"], relationship=relationship["relationship_type"]) for ref in relationship.get("from_document", [])])
+                        to_documents.extend([DocumentReference(document_id=ref["document_id"], title=ref["title"], relationship=relationship["relationship_type"]) for ref in relationship.get("to_document", [])])
                 relationships = DocumentRelationship(from_documents=from_documents, to_documents=to_documents)
                 result = DocumentChunkWithScore(
                     id=resp["_additional"]["id"],
@@ -314,8 +318,6 @@ class WeaviateDataStore(DataStore):
                 )
                 query_results.append(result)
             return QueryResult(query=query.query, results=query_results)
-
-
 
         return await asyncio.gather(*[_single_query(query) for query in queries])
 
