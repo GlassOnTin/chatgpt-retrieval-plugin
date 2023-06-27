@@ -169,8 +169,6 @@ class WeaviateDataStore(DataStore):
         if not any(prop for prop in schema["properties"] if prop["name"] == "relationships"):
             # If the property doesn't exist, add it
             self.client.schema.property.create(WEAVIATE_CLASS, relationships_property)
-        else:
-            self.client.schema.property.get(WEAVIATE_CLASS, "relationships")
 
 
     @staticmethod
