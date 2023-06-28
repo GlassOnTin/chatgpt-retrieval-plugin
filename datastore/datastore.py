@@ -13,7 +13,6 @@ from models.models import (
 from services.chunks import get_document_chunks
 from services.openai import get_embeddings
 
-
 class DataStore(ABC):
     async def upsert(
         self, documents: List[Document], chunk_token_size: Optional[int] = None
