@@ -228,6 +228,7 @@ class WeaviateDataStore(DataStore):
             logger.debug(f"Query: {query.query}")
             if not hasattr(query, "filter") or not query.filter:
                 if query.query:
+                    logger.debug(f"Querying without filter")
                     result = (
                         self.client.query.get(
                             WEAVIATE_CLASS,
@@ -253,7 +254,8 @@ class WeaviateDataStore(DataStore):
                 filters_ = self.build_filters(query.filter)
                 
                 # Added this check
-                if query.query:  
+                if query.query:
+                    logger.debug(f"Querying with filters")
                     result = (
                         self.client.query.get(
                             WEAVIATE_CLASS,
@@ -278,12 +280,14 @@ class WeaviateDataStore(DataStore):
                 
                 # Check if only id is provided
                 elif query.filter.id:
+                    logger.debug(f"Querying by id={query.filter.id}")
                     result = self.client.data_object.get_by_id(
                         query.filter.id,
                         class_name=WEAVIATE_CLASS,
                         consistency_level=weaviate.data.replication.ConsistencyLevel.ONE,
                     )
 
+            logger.debug(f"Result: {result}")
             query_results: List[DocumentChunkWithScore] = []
             if "data" not in result:
                 logger.error(f"Query result does not contain 'data': {result}")
@@ -294,7 +298,7 @@ class WeaviateDataStore(DataStore):
             response = result["data"]["Get"][WEAVIATE_CLASS]
 
             for resp in response:
-                print(f"Processing document chunk: {resp}")
+                logger.debug(f"Processing document chunk: {resp}")
                 from_documents = []
                 to_documents = []
                 if resp.get("relationships"):
@@ -453,7 +457,7 @@ class WeaviateDataStore(DataStore):
                     "to_document": [{
                         "beacon": f"weaviate://localhost/{to_id}"
                     }],
-                    "relationship_type": "Related"
+                    "relationship_type": from_relationship_type
                 }, 
                 WEAVIATE_RELATIONSHIP_CLASS
             )
@@ -467,7 +471,7 @@ class WeaviateDataStore(DataStore):
                     "to_document": [{
                         "beacon": f"weaviate://localhost/{to_id}"
                     }],
-                    "relationship_type": "Related"
+                    "relationship_type": to_relationship_type
                 },
                 WEAVIATE_RELATIONSHIP_CLASS
             )
