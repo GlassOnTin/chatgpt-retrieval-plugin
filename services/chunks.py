@@ -118,6 +118,7 @@ def create_document_chunks(
         if doc.metadata is not None
         else DocumentChunkMetadata()
     )
+
     metadata.document_id = doc_id
 
     # Check if the document text is empty or whitespace
@@ -138,7 +139,9 @@ def create_document_chunks(
     # Assign each chunk a sequential number and create a DocumentChunk object
     for i, text_chunk in enumerate(text_chunks):
         metadata.index = i
+        chunk_id = f"{doc_id}_{i}"
         doc_chunk = DocumentChunk(
+            id=chunk_id,
             index=i,
             text=text_chunk,
             metadata=metadata,
