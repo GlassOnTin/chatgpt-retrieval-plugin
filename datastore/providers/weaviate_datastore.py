@@ -1,4 +1,4 @@
-import datetime
+# TODO
 import asyncio
 from typing import Dict, List, Optional
 from loguru import logger
@@ -6,6 +6,8 @@ from weaviate import Client
 import weaviate
 import os
 import uuid
+
+from weaviate.util import generate_uuid5
 
 from datastore.datastore import DataStore
 from models.models import (
@@ -70,17 +72,17 @@ SCHEMA = {
         {
             "name": "source",
             "dataType": ["string"],
-            "description": "The source of the data (chat, file, url)",
+            "description": "The source of the data",
         },
         {
             "name": "created_at",
             "dataType": ["date"],
-            "description": "Creation date of the planning item",
+            "description": "Creation date",
         },
         {
             "name": "status",
             "dataType": ["string"],
-            "description": "The current status of the planning item (To Do, In Progress, Done)",
+            "description": "The current status (To Do, In Progress, Done)",
         }
     ],
 }
@@ -115,9 +117,29 @@ def extract_schema_properties(schema):
 
 
 class WeaviateDataStore(DataStore):
+    def handle_errors(self, results: Optional[List[dict]]) -> List[str]:
+        if not self or not results:
+            return []
+
+        error_messages = []
+        for result in results:
+            if (
+                "result" not in result
+                or "errors" not in result["result"]
+                or "error" not in result["result"]["errors"]
+            ):
+                continue
+            for message in result["result"]["errors"]["error"]:
+                error_messages.append(message["message"])
+                logger.exception(message["message"])
+
+        return error_messages
+
     def __init__(self):
         auth_credentials = self._build_auth_credentials()
+
         url = f"{WEAVIATE_HOST}:{WEAVIATE_PORT}"
+
         logger.debug(
             f"Connecting to weaviate instance at {url} with credential type {type(auth_credentials).__name__}"
         )
@@ -191,30 +213,37 @@ class WeaviateDataStore(DataStore):
             for doc_id, doc_chunks in chunks.items():
                 logger.debug(f"Upserting {doc_id} with {len(doc_chunks)} chunks")
                 for doc_chunk in doc_chunks:
+                    # we generate a uuid regardless of the format of the document_id because
+                    # weaviate needs a uuid to store each document chunk and
+                    # a document chunk cannot share the same uuid
+                    doc_uuid = generate_uuid5(doc_chunk, WEAVIATE_CLASS)
                     metadata = doc_chunk.metadata
                     doc_chunk_dict = doc_chunk.dict()
                     doc_chunk_dict.pop("metadata")
                     for key, value in metadata.dict().items():
                         doc_chunk_dict[key] = value
-                    embedding = doc_chunk_dict.pop("embedding")
+                    doc_chunk_dict["chunk_id"] = doc_chunk_dict.pop("id")
+                    doc_chunk_dict["relationships"] = (
+                        doc_chunk_dict.pop("relationships").value
+                        if doc_chunk_dict["relationships"]
+                        else None
+                    )
                     
-                    # Store the document's id in the DocumentChunkMetadata
-                    doc_id = doc_chunk_dict.pop('id', None)
-                    metadata.document_id = doc_id
-
                     # Set the 'created_at' field to the current system UTC time
                     doc_chunk_dict['created_at'] = datetime.datetime.now(datetime.timezone.utc).isoformat()
 
-                    new_uuid = batch.add_data_object(
-                        uuid=doc_id,
+                    embedding = doc_chunk_dict.pop("embedding")
+
+                    batch.add_data_object(
+                        uuid=doc_uuid,
                         data_object=doc_chunk_dict,
-                        class_name=WEAVIATE_CLASS,
+                        class_name=WEAVIATE_INDEX,
                         vector=embedding,
                     )
-                    doc_ids.append(new_uuid)
+
+                doc_ids.append(doc_id)
             batch.flush()
         return doc_ids
-
 
     async def _query(
         self,
@@ -233,6 +262,7 @@ class WeaviateDataStore(DataStore):
                         self.client.query.get(
                             WEAVIATE_CLASS,
                             [
+                                "chunk_id",
                                 "document_id",
                                 "index",
                                 "title",                                
@@ -260,6 +290,7 @@ class WeaviateDataStore(DataStore):
                         self.client.query.get(
                             WEAVIATE_CLASS,
                             [
+                                "chunk_id",
                                 "document_id",
                                 "index",
                                 "title",                                
@@ -309,6 +340,7 @@ class WeaviateDataStore(DataStore):
                 result = DocumentChunkWithScore(
                     id=resp["_additional"]["id"],
                     text=resp["text"],
+                    embedding=resp["_additional"]["vector"],
                     score=resp["_additional"]["score"],
                     metadata=DocumentChunkMetadata(
                         document_id=resp["document_id"] if resp["document_id"] else "",
@@ -350,7 +382,7 @@ class WeaviateDataStore(DataStore):
 
         if ids:
             operands = [
-                {"path": ["id"], "operator": "Equal", "valueString": id}
+                {"path": ["document_id"], "operator": "Equal", "valueString": id}
                 for id in ids
             ]
 
@@ -369,7 +401,7 @@ class WeaviateDataStore(DataStore):
                 return False
 
             if not bool(result["results"]["successful"]):
-                logger.error(
+                logger.debug(
                     f"Failed to delete the following objects: {result['results']['objects']}"
                 )
                 return False
@@ -378,7 +410,7 @@ class WeaviateDataStore(DataStore):
             where_clause = self.build_filters(filter)
 
             logger.debug(
-                f"Deleting vectors from index {WEAVIATE_CLASS} with filter {where_clause}"
+                f"Deleting vectors from index {WEAVIATE_INDEX} with filter {where_clause}"
             )
             logger.debug(f"Where clause: {where_clause}")
             try:
@@ -392,7 +424,7 @@ class WeaviateDataStore(DataStore):
                 return False
 
             if not bool(result["results"]["successful"]):
-                logger.error(
+                logger.debug(
                     f"Failed to delete the following objects: {result['results']['objects']}"
                 )
                 return False
