@@ -2,7 +2,7 @@
   "schema_version": "v1",
   "name_for_model": "GraphMemory",
   "name_for_human": "Graph Memory",
-  "description_for_model": "This plugin is used to insert, update, or delete documents in the vector database. Each document includes 'text' and 'metadata'. The 'metadata' includes 'title', 'type', 'source', 'created_at', and 'status'. If updating an existing document, include the document's 'id'. The plugin also supports adding and deleting references between documents, with each reference indicating a specific type of relationship.",
+  "description_for_model": "This plugin is used to insert, update, or delete documents in the vector database. Each document includes 'text' and 'metadata'. The 'metadata' includes 'title', 'type', 'source', and 'status'. If updating an existing document, include the document's 'id'. The plugin also supports adding and deleting references between documents, with each reference indicating a specific type of relationship.",
   "description_for_human": "Vector Graph Memory with Document Relationships",
   "auth": {
     "type": "user_http",
