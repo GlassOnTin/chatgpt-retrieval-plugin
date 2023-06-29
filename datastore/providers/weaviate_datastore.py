@@ -238,7 +238,7 @@ class WeaviateDataStore(DataStore):
                     batch.add_data_object(
                         uuid=doc_uuid,
                         data_object=doc_chunk_dict,
-                        class_name=WEAVIATE_INDEX,
+                        class_name=WEAVIATE_CLASS,
                         vector=embedding,
                     )
 
@@ -411,7 +411,7 @@ class WeaviateDataStore(DataStore):
             where_clause = self.build_filters(filter)
 
             logger.debug(
-                f"Deleting vectors from index {WEAVIATE_INDEX} with filter {where_clause}"
+                f"Deleting vectors from index {WEAVIATE_CLASS} with filter {where_clause}"
             )
             logger.debug(f"Where clause: {where_clause}")
             try:
