@@ -19,7 +19,6 @@ services:
       PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
       DEFAULT_VECTORIZER_MODULE: 'text2vec-openai'
       ENABLE_MODULES: 'text2vec-openai'
-      OPENAI_APIKEY: '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'
       CLUSTER_HOSTNAME: 'node1'
       LOG_LEVEL: debug
       AUTOSCHEMA_ENABLED: 'false'
