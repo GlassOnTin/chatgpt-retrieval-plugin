@@ -277,7 +277,7 @@ class WeaviateDataStore(DataStore):
                         )
                         .with_hybrid(query=query.query, alpha=0.5, vector=query.embedding)
                         .with_limit(query.top_k)
-                        .with_additional(["id","score"])
+                        .with_additional(["id","score","vector"])
                         .do()
                     )
                     
@@ -306,15 +306,15 @@ class WeaviateDataStore(DataStore):
                         .with_hybrid(query=query.query, alpha=0.5, vector=query.embedding)
                         .with_where(filters_)
                         .with_limit(query.top_k)
-                        .with_additional(["id","score"])
+                        .with_additional(["id","score","vector"])
                         .do()
                     )
                 
                 # Check if only id is provided
-                elif query.filter.id:
-                    logger.debug(f"Querying by id={query.filter.id}")
+                elif query.filter.document_id:
+                    logger.debug(f"Querying by document_id={query.filter.document_id}")
                     result = self.client.data_object.get_by_id(
-                        query.filter.id,
+                        query.filter.document_id,
                         class_name=WEAVIATE_CLASS,
                         consistency_level=weaviate.data.replication.ConsistencyLevel.ONE,
                     )
@@ -323,7 +323,8 @@ class WeaviateDataStore(DataStore):
             query_results: List[DocumentChunkWithScore] = []
             if "data" not in result:
                 logger.error(f"Query result does not contain 'data': {result}")
-                return []
+                return QueryResult(query=query.query, results=[])
+
             else:
                 response = result["data"]["Get"][WEAVIATE_CLASS]
 
@@ -341,7 +342,7 @@ class WeaviateDataStore(DataStore):
                 result = DocumentChunkWithScore(
                     id=resp["_additional"]["id"],
                     text=resp["text"],
-                    embedding=resp["_additional"]["vector"],
+                    #embedding=resp["_additional"]["vector"],
                     score=resp["_additional"]["score"],
                     metadata=DocumentChunkMetadata(
                         document_id=resp["document_id"] if resp["document_id"] else "",
@@ -588,24 +589,6 @@ class WeaviateDataStore(DataStore):
                 if from_document_id == from_id and to_document_id == to_id:
                     return relationship["_additional"]["id"]
         return None
-
-    def handle_errors(self, results: Optional[List[dict]]) -> List[str]:
-        if not self or not results:
-            return []
-
-        error_messages = []
-        for result in results:
-            if (
-                "result" not in result
-                or "errors" not in result["result"]
-                or "error" not in result["result"]["errors"]
-            ):
-                continue
-            for message in result["result"]["errors"]["error"]:
-                error_messages.append(message["message"])
-                logger.exception(message["message"])
-
-        return error_messages
 
     @staticmethod
     def _is_valid_weaviate_id(candidate_id: str) -> bool:
