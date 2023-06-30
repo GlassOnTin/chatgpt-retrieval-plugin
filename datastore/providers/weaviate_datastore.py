@@ -500,10 +500,10 @@ class WeaviateDataStore(DataStore):
             from_relationship_resp = self.client.data_object.create(
                 {
                     "from_document": [{
-                        "beacon": f"weaviate://localhost/{from_chunk['id']}"
+                        "beacon": f"weaviate://localhost/{from_chunk_id}"
                     }],
                     "to_document": [{
-                        "beacon": f"weaviate://localhost/{to_chunk['id']}"
+                        "beacon": f"weaviate://localhost/{to_chunk_id}"
                     }],
                     "relationship_type": from_relationship_type
                 }, 
@@ -515,10 +515,10 @@ class WeaviateDataStore(DataStore):
             to_relationship_resp = self.client.data_object.create(
                 {
                     "from_document": [{
-                        "beacon": f"weaviate://localhost/{from_chunk['id']}"
+                        "beacon": f"weaviate://localhost/{from_chunk_id}"
                     }],
                     "to_document": [{
-                        "beacon": f"weaviate://localhost/{to_chunk['id']}"
+                        "beacon": f"weaviate://localhost/{to_chunk_id}"
                     }],
                     "relationship_type": to_relationship_type
                 },
@@ -528,7 +528,7 @@ class WeaviateDataStore(DataStore):
 
             # Add a reference from the from_document to the from_relationship_type Relationship object
             self.client.data_object.reference.add(
-                from_uuid=from_chunk['id'],
+                from_uuid=from_chunk_id,
                 from_property_name="relationships",
                 to_uuid=from_relationship_id,
                 from_class_name=WEAVIATE_CLASS,
@@ -538,7 +538,7 @@ class WeaviateDataStore(DataStore):
 
             # Add a reference from the to_document to the to_relationship_type Relationship object
             self.client.data_object.reference.add(
-                from_uuid=to_chunk['id'],
+                from_uuid=to_chunk_id,
                 from_property_name="relationships",
                 to_uuid=to_relationship_id,
                 from_class_name=WEAVIATE_CLASS,
