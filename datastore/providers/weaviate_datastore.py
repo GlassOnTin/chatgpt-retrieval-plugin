@@ -480,7 +480,7 @@ class WeaviateDataStore(DataStore):
 
             # Check if the 'id' is in the '_additional' field of the response
             if '_additional' in from_chunk and 'id' in from_chunk['_additional']:
-                from_chunk_id = from_chunk['_additional']['id']
+                from_chunk_id = from_chunk['data']['Get']['OpenAIDocument'][0]['_additional']['id']
             else:
                 raise Exception("ID not found in the response for the from_document")
 
@@ -492,7 +492,7 @@ class WeaviateDataStore(DataStore):
 
             # Check if the 'id' is in the '_additional' field of the response
             if '_additional' in to_chunk and 'id' in to_chunk['_additional']:
-                to_chunk_id = to_chunk['_additional']['id']
+                to_chunk_id = to_chunk['data']['Get']['OpenAIDocument'][0]['_additional']['id']
             else:
                 raise Exception("ID not found in the response for the to_document")
 
