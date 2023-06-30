@@ -71,7 +71,7 @@ async def upsert_file(
     document = await get_document_from_file(file, metadata_obj)
 
     try:
-        ids = await datastore.upsert([document])
+        ids = await datastore.upsert([document])    # type: ignore
         return UpsertResponse(ids=ids)
     except Exception as e:
         print("Error:", e)
@@ -87,7 +87,7 @@ async def upsert_main(
     token: HTTPAuthorizationCredentials = Depends(validate_token),
 ):
     try:
-        ids = await datastore.upsert(request.documents)
+        ids = await datastore.upsert(request.documents) # type: ignore
         return UpsertResponse(ids=ids)
     except Exception as e:
         print("Error:", e)
@@ -104,7 +104,7 @@ async def upsert(
     token: HTTPAuthorizationCredentials = Depends(validate_token),
 ):
     try:
-        ids = await datastore.upsert(request.documents)
+        ids = await datastore.upsert(request.documents) # type: ignore
         return UpsertResponse(ids=ids)
     except Exception as e:
         print("Error:", e)
@@ -120,9 +120,7 @@ async def query_main(
     token: HTTPAuthorizationCredentials = Depends(validate_token),
 ):
     try:
-        results = await datastore.query(
-            request.queries,
-        )
+        results = await datastore.query(request.queries) # type: ignore
 
         for result in results:
             print(f"Query result: {result}")
@@ -143,9 +141,7 @@ async def query(
     token: HTTPAuthorizationCredentials = Depends(validate_token),
 ):
     try:
-        results = await datastore.query(
-            request.queries,
-        )
+        results = await datastore.query(request.queries) # type: ignore
         return QueryResponse(results=results)
     except Exception as e:
         print("Error:", e)
@@ -165,7 +161,7 @@ async def delete(
             detail="One of ids, filter, or delete_all is required",
         )
     try:
-        success = await datastore.delete(
+        success = await datastore.delete(       # type: ignore
             ids=request.ids,
             filter=request.filter,
             delete_all=request.delete_all,
@@ -185,7 +181,7 @@ async def add_reference(
     token: HTTPAuthorizationCredentials = Depends(validate_token),
 ):
     try:
-        success = await datastore.add_reference(
+        success = await datastore.add_reference(        # type: ignore
             from_id=request.from_id,
             to_id=request.to_id,
             from_relationship_type=request.from_relationship_type,
@@ -206,7 +202,7 @@ async def delete_reference(
     token: HTTPAuthorizationCredentials = Depends(validate_token),
 ):
     try:
-        success = await datastore.delete_reference(
+        success = await datastore.delete_reference(     # type: ignore
             from_id=request.from_id,
             to_id=request.to_id
         )
