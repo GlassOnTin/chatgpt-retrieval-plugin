@@ -475,6 +475,7 @@ class WeaviateDataStore(DataStore):
         to_id: str,
         from_relationship_type: str,
         to_relationship_type: str,
+        id_key: str = "id",  # new parameter
         consistency_level: weaviate.data.replication.ConsistencyLevel = weaviate.data.replication.ConsistencyLevel.ALL,
     ) -> bool:
         """
@@ -482,29 +483,25 @@ class WeaviateDataStore(DataStore):
         """
         logger.debug(f"Adding references between {from_id} and {to_id}")
         try:
+            # Determine the beacon format based on id_key
+            from_beacon = f"weaviate://localhost?{id_key}={from_id}"
+            to_beacon = f"weaviate://localhost?{id_key}={to_id}"
+
             # Create a Relationship object for the from_relationship_type
-            from_relationship_id = self. client.data_object.create(
+            from_relationship_id = self.client.data_object.create(
                 {
-                    "from_document": [{
-                        "beacon": f"weaviate://localhost/{from_id}"
-                    }],
-                    "to_document": [{
-                        "beacon": f"weaviate://localhost/{to_id}"
-                    }],
+                    "from_document": [{"beacon": from_beacon}],
+                    "to_document": [{"beacon": to_beacon}],
                     "relationship_type": from_relationship_type
                 }, 
                 WEAVIATE_RELATIONSHIP_CLASS
             )
 
             # Create a Relationship object for the to_relationship_type
-            to_relationship_id = self. client.data_object.create(
+            to_relationship_id = self.client.data_object.create(
                 {
-                    "from_document": [{
-                        "beacon": f"weaviate://localhost/{from_id}"
-                    }],
-                    "to_document": [{
-                        "beacon": f"weaviate://localhost/{to_id}"
-                    }],
+                    "from_document": [{"beacon": from_beacon}],
+                    "to_document": [{"beacon": to_beacon}],
                     "relationship_type": to_relationship_type
                 },
                 WEAVIATE_RELATIONSHIP_CLASS
@@ -535,11 +532,11 @@ class WeaviateDataStore(DataStore):
             logger.error(f"Failed to add references between {from_id} and {to_id}: {e}")
             return False
 
-
     async def delete_reference(
         self,
         from_id: str,
         to_id: str,
+        id_key: str = "id",  # new parameter
         consistency_level: weaviate.data.replication.ConsistencyLevel = weaviate.data.replication.ConsistencyLevel.ALL,
     ) -> bool:
         """
@@ -548,7 +545,7 @@ class WeaviateDataStore(DataStore):
         logger.debug(f"Deleting relationship between {from_id} and {to_id}")
         try:
             # Find the Relationship object
-            relationship_id = self.find_relationship(from_id, to_id)
+            relationship_id = self.find_relationship(from_id, to_id, id_key)
 
             if relationship_id is None:
                 logger.error(f"No relationship found between {from_id} and {to_id}")
@@ -580,15 +577,16 @@ class WeaviateDataStore(DataStore):
             logger.error(f"Failed to delete relationship between {from_id} and {to_id}: {e}")
             return False
 
-    def find_relationship(client, from_id, to_id):
-        result = client.query.get(WEAVIATE_RELATIONSHIP_CLASS, ["from_document { ... on " + WEAVIATE_CLASS + " { document_id } }", "to_document { ... on " + WEAVIATE_CLASS + " { document_id } }"]).with_additional(["id"]).do()
+    def find_relationship(client, from_id, to_id, id_key):
+        result = client.query.get(WEAVIATE_RELATIONSHIP_CLASS, [f"from_document {{ ... on {WEAVIATE_CLASS} {{ {id_key} }} }}", f"to_document {{ ... on {WEAVIATE_CLASS} {{ {id_key} }} }}"]).with_additional(["id"]).do()
         if "data" in result and WEAVIATE_RELATIONSHIP_CLASS in result["data"]["Get"]:
             for relationship in result["data"]["Get"][WEAVIATE_RELATIONSHIP_CLASS]:
-                from_document_id = relationship["from_document"][0]["document_id"]
-                to_document_id = relationship["to_document"][0]["document_id"]
+                from_document_id = relationship["from_document"][0][id_key]
+                to_document_id = relationship["to_document"][0][id_key]
                 if from_document_id == from_id and to_document_id == to_id:
                     return relationship["_additional"]["id"]
         return None
+
 
     @staticmethod
     def _is_valid_weaviate_id(candidate_id: str) -> bool:
