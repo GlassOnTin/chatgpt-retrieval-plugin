@@ -490,6 +490,9 @@ class WeaviateDataStore(DataStore):
             # Get the first chunk for the to_document
             to_chunk = self.client.query.get(WEAVIATE_CLASS).with_where(to_filter).with_additional(["id"]).do()
 
+            print(from_chunk)
+            print(to_chunk)
+            
             # Check if the 'id' is in the '_additional' field of the response
             if '_additional' in to_chunk and 'id' in to_chunk['_additional']:
                 to_chunk_id = to_chunk['data']['Get']['OpenAIDocument'][0]['_additional']['id']
