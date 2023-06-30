@@ -309,15 +309,6 @@ class WeaviateDataStore(DataStore):
                         .do()
                     )
                 
-                # Check if only id is provided
-                elif query.filter.document_id:
-                    logger.debug(f"Querying by document_id={query.filter.document_id}")
-                    result = self.client.data_object.get_by_id(
-                        query.filter.document_id,
-                        class_name=WEAVIATE_CLASS,
-                        consistency_level=weaviate.data.replication.ConsistencyLevel.ONE,
-                    )
-
             logger.debug(f"Result: {result}")
             query_results: List[DocumentChunkWithScore] = []
             if "data" not in result:
@@ -485,13 +476,25 @@ class WeaviateDataStore(DataStore):
             from_filter = self.build_filters(DocumentChunkMetadataFilter(document_id=from_document_id, index=0))
 
             # Get the first chunk for the from_document
-            from_chunk = self.client.query.get(WEAVIATE_CLASS, ["id"]).with_where(from_filter).with_additional(["id"]).do()
+            from_chunk = self.client.query.get(WEAVIATE_CLASS).with_where(from_filter).with_additional(["id"]).do()
+
+            # Check if the 'id' is in the '_additional' field of the response
+            if '_additional' in from_chunk and 'id' in from_chunk['_additional']:
+                from_chunk_id = from_chunk['_additional']['id']
+            else:
+                raise Exception("ID not found in the response for the from_document")
 
             # Build the filter for the to_document
             to_filter = self.build_filters(DocumentChunkMetadataFilter(document_id=to_document_id, index=0))
 
             # Get the first chunk for the to_document
-            to_chunk = self.client.query.get(WEAVIATE_CLASS, ["id"]).with_where(to_filter).with_additional(["id"]).do()
+            to_chunk = self.client.query.get(WEAVIATE_CLASS).with_where(to_filter).with_additional(["id"]).do()
+
+            # Check if the 'id' is in the '_additional' field of the response
+            if '_additional' in to_chunk and 'id' in to_chunk['_additional']:
+                to_chunk_id = to_chunk['_additional']['id']
+            else:
+                raise Exception("ID not found in the response for the to_document")
 
             # Create a Relationship object for the from_relationship_type
             from_relationship_resp = self.client.data_object.create(
