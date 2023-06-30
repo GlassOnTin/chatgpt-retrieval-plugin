@@ -3,7 +3,7 @@ import os
 from typing import Dict, List, Optional, Type
 from loguru import logger
 from datastore.datastore import DataStore
-from models.models import DocumentChunk, DocumentChunkMetadata, DocumentChunkWithScore, DocumentMetadataFilter, Query, QueryResult, QueryWithEmbedding
+from models.models import DocumentChunk, DocumentChunkMetadata, DocumentChunkWithScore, DocumentChunkMetadataFilter, Query, QueryResult, QueryWithEmbedding
 
 from llama_index.indices.base import BaseGPTIndex
 from llama_index.indices.vector_store.base import GPTVectorStoreIndex
@@ -154,7 +154,7 @@ class LlamaDataStore(DataStore):
     async def delete(
         self,
         ids: Optional[List[str]] = None,
-        filter: Optional[DocumentMetadataFilter] = None,
+        filter: Optional[DocumentChunkMetadataFilter] = None,
         delete_all: Optional[bool] = None,
     ) -> bool:
         """

@@ -9,7 +9,6 @@ class DocumentMetadata(BaseModel):
     created_at: Optional[str] = None
     status: Optional[str] = None
 
-
 class DocumentReference(BaseModel):
     document_id: str
     title: str
@@ -25,13 +24,15 @@ class DocumentChunkMetadata(DocumentMetadata):
     document_id: Optional[str] = None
     index: Optional[int] = 0
 
+class DocumentChunkMetadataFilter(DocumentChunkMetadata):
+    start_date: Optional[str] = None  # any date string format
+    end_date: Optional[str] = None  # any date string format
 
 class DocumentChunk(BaseModel):
     text: str
     metadata: DocumentChunkMetadata
     relationships: Optional[DocumentRelationship] = None
     embedding: Optional[List[float]] = None
-
 
 class DocumentChunkWithScore(DocumentChunk):
     score: float
@@ -46,16 +47,9 @@ class Document(BaseModel):
 class DocumentWithChunks(Document):
     chunks: List[DocumentChunk]
 
-
-class DocumentMetadataFilter(DocumentMetadata):
-    document_id: Optional[str] = None
-    start_date: Optional[str] = None  # any date string format
-    end_date: Optional[str] = None  # any date string format
-
-
 class Query(BaseModel):
     query: str
-    filter: Optional[DocumentMetadataFilter] = None
+    filter: Optional[DocumentChunkMetadataFilter] = None
     top_k: Optional[int] = 3
 
 

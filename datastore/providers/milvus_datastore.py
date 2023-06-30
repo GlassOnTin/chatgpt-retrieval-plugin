@@ -21,7 +21,7 @@ from models.models import (
     DocumentChunk,
     DocumentChunkMetadata,
     Source,
-    DocumentMetadataFilter,
+    DocumentChunkMetadataFilter,
     QueryResult,
     QueryWithEmbedding,
     DocumentChunkWithScore,
@@ -447,7 +447,7 @@ class MilvusDataStore(DataStore):
     async def delete(
         self,
         ids: Optional[List[str]] = None,
-        filter: Optional[DocumentMetadataFilter] = None,
+        filter: Optional[DocumentChunkMetadataFilter] = None,
         delete_all: Optional[bool] = None,
     ) -> bool:
         """Delete the entities based either on the chunk_id of the vector,
@@ -533,7 +533,7 @@ class MilvusDataStore(DataStore):
 
         return True
 
-    def _get_filter(self, filter: DocumentMetadataFilter) -> Optional[str]:
+    def _get_filter(self, filter: DocumentChunkMetadataFilter) -> Optional[str]:
         """Converts a DocumentMetdataFilter to the expression that Milvus takes.
 
         Args:

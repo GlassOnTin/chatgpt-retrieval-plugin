@@ -18,9 +18,9 @@ from typing import Dict, List, Optional
 from datastore.datastore import DataStore
 from models.models import (
     DocumentChunk,
-    DocumentMetadataFilter,
+    DocumentChunkMetadataFilter,
     DocumentChunkWithScore,
-    DocumentMetadataFilter,
+    DocumentChunkMetadataFilter,
     QueryResult,
     QueryWithEmbedding,
 )
@@ -339,7 +339,7 @@ class RedisDataStore(DataStore):
     async def delete(
         self,
         ids: Optional[List[str]] = None,
-        filter: Optional[DocumentMetadataFilter] = None,
+        filter: Optional[DocumentChunkMetadataFilter] = None,
         delete_all: Optional[bool] = None,
     ) -> bool:
         """

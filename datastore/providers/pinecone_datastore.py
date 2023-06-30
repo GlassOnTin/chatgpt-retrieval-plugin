@@ -9,7 +9,7 @@ from models.models import (
     DocumentChunk,
     DocumentChunkMetadata,
     DocumentChunkWithScore,
-    DocumentMetadataFilter,
+    DocumentChunkMetadataFilter,
     QueryResult,
     QueryWithEmbedding,
     Source,
@@ -175,7 +175,7 @@ class PineconeDataStore(DataStore):
     async def delete(
         self,
         ids: Optional[List[str]] = None,
-        filter: Optional[DocumentMetadataFilter] = None,
+        filter: Optional[DocumentChunkMetadataFilter] = None,
         delete_all: Optional[bool] = None,
     ) -> bool:
         """
@@ -218,7 +218,7 @@ class PineconeDataStore(DataStore):
         return True
 
     def _get_pinecone_filter(
-        self, filter: Optional[DocumentMetadataFilter] = None
+        self, filter: Optional[DocumentChunkMetadataFilter] = None
     ) -> Dict[str, Any]:
         if filter is None:
             return {}

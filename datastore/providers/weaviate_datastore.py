@@ -16,7 +16,7 @@ from models.models import (
     DocumentRelationship,
     DocumentChunk,
     DocumentChunkMetadata,
-    DocumentMetadataFilter,
+    DocumentChunkMetadataFilter,
     QueryResult,
     QueryWithEmbedding,
     DocumentChunkWithScore
@@ -281,7 +281,7 @@ class WeaviateDataStore(DataStore):
                     )
                     
             else:
-                filters_ = self.build_filters(query.filter)
+                filters_ = WeaviateDataStore.build_filters(query.filter)
                 
                 # Added this check
                 if query.query:
@@ -361,7 +361,7 @@ class WeaviateDataStore(DataStore):
     async def delete(
         self,
         ids: Optional[List[str]] = None,
-        filter: Optional[DocumentMetadataFilter] = None,
+        filter: Optional[DocumentChunkMetadataFilter] = None,
         delete_all: Optional[bool] = None,
     ) -> bool:
         """
@@ -408,7 +408,7 @@ class WeaviateDataStore(DataStore):
                 return False
 
         if filter:
-            where_clause = self.build_filters(filter)
+            where_clause = WeaviateDataStore.build_filters(filter)
 
             logger.debug(
                 f"Deleting vectors from index {WEAVIATE_CLASS} with filter {where_clause}"
@@ -481,11 +481,17 @@ class WeaviateDataStore(DataStore):
         """
         logger.debug(f"Adding references between {from_document_id} and {to_document_id}")
         try:
+            # Build the filter for the from_document
+            from_filter = self.build_filters(DocumentChunkMetadataFilter(document_id=from_document_id, index=0))
+
             # Get the first chunk for the from_document
-            from_chunk = self.client.query.get(WEAVIATE_CLASS, ["id"]).with_where({"document_id": from_document_id, "index": 0}).with_additional(["id"]).do()
+            from_chunk = self.client.query.get(WEAVIATE_CLASS, ["id"]).with_where(from_filter).with_additional(["id"]).do()
+
+            # Build the filter for the to_document
+            to_filter = self.build_filters(DocumentChunkMetadataFilter(document_id=to_document_id, index=0))
 
             # Get the first chunk for the to_document
-            to_chunk = self.client.query.get(WEAVIATE_CLASS, ["id"]).with_where({"document_id": to_document_id, "index": 0}).with_additional(["id"]).do()
+            to_chunk = self.client.query.get(WEAVIATE_CLASS, ["id"]).with_where(to_filter).with_additional(["id"]).do()
 
             # Create a Relationship object for the from_relationship_type
             from_relationship_resp = self.client.data_object.create(

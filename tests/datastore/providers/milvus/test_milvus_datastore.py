@@ -6,7 +6,7 @@
 import pytest
 from models.models import (
     DocumentChunkMetadata,
-    DocumentMetadataFilter,
+    DocumentChunkMetadataFilter,
     DocumentChunk,
     QueryWithEmbedding,
     Source,
@@ -242,7 +242,7 @@ async def test_query_filter(milvus_datastore, document_chunk_one):
         query="lorem",
         top_k=1,
         embedding=sample_embedding(0),
-        filter=DocumentMetadataFilter(
+        filter=DocumentChunkMetadataFilter(
             start_date="2000-01-03T16:39:57-08:00", end_date="2010-01-03T16:39:57-08:00"
         ),
     )
@@ -262,7 +262,7 @@ async def test_delete_with_date_filter(milvus_datastore, document_chunk_one):
     assert res == list(document_chunk_one.keys())
     milvus_datastore.col.flush()
     await milvus_datastore.delete(
-        filter=DocumentMetadataFilter(
+        filter=DocumentChunkMetadataFilter(
             end_date="2009-01-03T16:39:57-08:00",
         )
     )
@@ -287,7 +287,7 @@ async def test_delete_with_source_filter(milvus_datastore, document_chunk_one):
     assert res == list(document_chunk_one.keys())
     milvus_datastore.col.flush()
     await milvus_datastore.delete(
-        filter=DocumentMetadataFilter(
+        filter=DocumentChunkMetadataFilter(
             source=Source.email,
         )
     )
@@ -312,7 +312,7 @@ async def test_delete_with_document_id_filter(milvus_datastore, document_chunk_o
     assert res == list(document_chunk_one.keys())
     milvus_datastore.col.flush()
     await milvus_datastore.delete(
-        filter=DocumentMetadataFilter(
+        filter=DocumentChunkMetadataFilter(
             document_id=res[0],
         )
     )

@@ -9,7 +9,7 @@ from qdrant_client.http.models import PayloadSchemaType
 from datastore.datastore import DataStore
 from models.models import (
     DocumentChunk,
-    DocumentMetadataFilter,
+    DocumentChunkMetadataFilter,
     QueryResult,
     QueryWithEmbedding,
     DocumentChunkWithScore,
@@ -103,7 +103,7 @@ class QdrantDataStore(DataStore):
     async def delete(
         self,
         ids: Optional[List[str]] = None,
-        filter: Optional[DocumentMetadataFilter] = None,
+        filter: Optional[DocumentChunkMetadataFilter] = None,
         delete_all: Optional[bool] = None,
     ) -> bool:
         """
@@ -165,7 +165,7 @@ class QdrantDataStore(DataStore):
 
     def _convert_metadata_filter_to_qdrant_filter(
         self,
-        metadata_filter: Optional[DocumentMetadataFilter] = None,
+        metadata_filter: Optional[DocumentChunkMetadataFilter] = None,
         ids: Optional[List[str]] = None,
     ) -> Optional[rest.Filter]:
         if metadata_filter is None and ids is None:

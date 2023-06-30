@@ -1,6 +1,6 @@
 from models.models import (
     Document,
-    DocumentMetadataFilter,
+    DocumentChunkMetadataFilter,
     Query,
     QueryResult,
 )
@@ -26,7 +26,7 @@ class QueryResponse(BaseModel):
 
 class DeleteRequest(BaseModel):
     ids: Optional[List[str]] = None
-    filter: Optional[DocumentMetadataFilter] = None
+    filter: Optional[DocumentChunkMetadataFilter] = None
     delete_all: Optional[bool] = False
 
 

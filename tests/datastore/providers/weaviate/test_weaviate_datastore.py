@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 from weaviate import Client
 import weaviate
 import os
-from models.models import DocumentMetadataFilter, Source
+from models.models import DocumentChunkMetadataFilter, Source
 from server.main import app
 from datastore.providers.weaviate_datastore import (
     SCHEMA,
@@ -376,7 +376,7 @@ def test_reuse_schema(weaviate_client, caplog):
 
 
 def test_build_date_filters():
-    filter = DocumentMetadataFilter(
+    filter = DocumentChunkMetadataFilter(
         document_id=None,
         source=None,
         source_id=None,

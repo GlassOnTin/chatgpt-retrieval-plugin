@@ -5,7 +5,7 @@ import asyncio
 from models.models import (
     Document,
     DocumentChunk,
-    DocumentMetadataFilter,
+    DocumentChunkMetadataFilter,
     Query,
     QueryResult,
     QueryWithEmbedding,
@@ -27,7 +27,7 @@ class DataStore(ABC):
         await asyncio.gather(
             *[
                 self.delete(
-                    filter=DocumentMetadataFilter(
+                    filter=DocumentChunkMetadataFilter(
                         document_id=document.id,
                     ),
                     delete_all=False,
@@ -75,7 +75,7 @@ class DataStore(ABC):
     async def delete(
         self,
         ids: Optional[List[str]] = None,
-        filter: Optional[DocumentMetadataFilter] = None,
+        filter: Optional[DocumentChunkMetadataFilter] = None,
         delete_all: Optional[bool] = None,
     ) -> bool:
         """

@@ -9,7 +9,7 @@ from models.models import (
     DocumentChunk,
     DocumentChunkMetadata,
     QueryWithEmbedding,
-    DocumentMetadataFilter,
+    DocumentChunkMetadataFilter,
     Source,
 )
 
@@ -173,13 +173,13 @@ async def test_query_filter_by_document_id_returns_this_document_chunks(
 
     first_query = QueryWithEmbedding(
         query="dolor",
-        filter=DocumentMetadataFilter(document_id="first-doc"),
+        filter=DocumentChunkMetadataFilter(document_id="first-doc"),
         top_k=5,
         embedding=[0.0, 0.0, 0.5, 0.0, 0.0],
     )
     second_query = QueryWithEmbedding(
         query="dolor",
-        filter=DocumentMetadataFilter(document_id="second-doc"),
+        filter=DocumentChunkMetadataFilter(document_id="second-doc"),
         top_k=5,
         embedding=[0.0, 0.0, 0.5, 0.0, 0.0],
     )
@@ -204,7 +204,7 @@ async def test_query_start_date_converts_datestring(
 
     query = QueryWithEmbedding(
         query="sit amet",
-        filter=DocumentMetadataFilter(start_date=start_date),
+        filter=DocumentChunkMetadataFilter(start_date=start_date),
         top_k=5,
         embedding=[0.0, 0.0, 0.5, 0.0, 0.0],
     )
@@ -226,7 +226,7 @@ async def test_query_end_date_converts_datestring(
 
     query = QueryWithEmbedding(
         query="sit amet",
-        filter=DocumentMetadataFilter(end_date=end_date),
+        filter=DocumentChunkMetadataFilter(end_date=end_date),
         top_k=5,
         embedding=[0.0, 0.0, 0.5, 0.0, 0.0],
     )
@@ -260,7 +260,7 @@ async def test_delete_removes_by_document_id_filter(
     await qdrant_datastore._upsert(document_chunks)
 
     await qdrant_datastore.delete(
-        filter=DocumentMetadataFilter(document_id="first-doc")
+        filter=DocumentChunkMetadataFilter(document_id="first-doc")
     )
 
     assert 2 == client.count(collection_name="documents").count
