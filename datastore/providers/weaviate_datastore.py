@@ -438,9 +438,9 @@ class WeaviateDataStore(DataStore):
         filter_conditions = {
             "start_date": {"operator": "GreaterThanEqual", "value_key": "valueDate"},
             "end_date": {"operator": "LessThanEqual", "value_key": "valueDate"},
+            "index": {"operator": "Equal", "value_key": "valueInt"},
             "default": {"operator": "Equal", "value_key": "valueString"},
         }
-
         for attr, value in filter.__dict__.items():
             if value is not None:
                 filter_condition = filter_conditions.get(
