@@ -340,7 +340,6 @@ class WeaviateDataStore(DataStore):
                         to_documents.extend([DocumentReference(document_id=ref["document_id"], title=ref["title"], relationship=relationship["relationship_type"]) for ref in relationship.get("to_document", [])])
                 relationships = DocumentRelationship(from_documents=from_documents, to_documents=to_documents)
                 result = DocumentChunkWithScore(
-                    id=resp["_additional"]["id"],
                     text=resp["text"],
                     #embedding=resp["_additional"]["vector"],
                     score=resp["_additional"]["score"],
@@ -471,45 +470,56 @@ class WeaviateDataStore(DataStore):
     
     async def add_reference(
         self,
-        from_id: str,
-        to_id: str,
+        from_document_id: str,
+        to_document_id: str,
         from_relationship_type: str,
         to_relationship_type: str,
-        id_key: str = "id",  # new parameter
         consistency_level: weaviate.data.replication.ConsistencyLevel = weaviate.data.replication.ConsistencyLevel.ALL,
     ) -> bool:
         """
         Adds a two-way cross-reference between two documents properties
         """
-        logger.debug(f"Adding references between {from_id} and {to_id}")
+        logger.debug(f"Adding references between {from_document_id} and {to_document_id}")
         try:
-            # Determine the beacon format based on id_key
-            from_beacon = f"weaviate://localhost?{id_key}={from_id}"
-            to_beacon = f"weaviate://localhost?{id_key}={to_id}"
+            # Get the first chunk for the from_document
+            from_chunk = self.client.query.get(WEAVIATE_CLASS, ["id"]).with_where({"document_id": from_document_id, "index": 0}).with_additional(["id"]).do()
+
+            # Get the first chunk for the to_document
+            to_chunk = self.client.query.get(WEAVIATE_CLASS, ["id"]).with_where({"document_id": to_document_id, "index": 0}).with_additional(["id"]).do()
 
             # Create a Relationship object for the from_relationship_type
-            from_relationship_id = self.client.data_object.create(
+            from_relationship_resp = self.client.data_object.create(
                 {
-                    "from_document": [{"beacon": from_beacon}],
-                    "to_document": [{"beacon": to_beacon}],
+                    "from_document": [{
+                        "beacon": f"weaviate://localhost/{from_chunk['id']}"
+                    }],
+                    "to_document": [{
+                        "beacon": f"weaviate://localhost/{to_chunk['id']}"
+                    }],
                     "relationship_type": from_relationship_type
                 }, 
                 WEAVIATE_RELATIONSHIP_CLASS
             )
+            from_relationship_id = from_relationship_resp["_additional"]["id"]
 
             # Create a Relationship object for the to_relationship_type
-            to_relationship_id = self.client.data_object.create(
+            to_relationship_resp = self.client.data_object.create(
                 {
-                    "from_document": [{"beacon": from_beacon}],
-                    "to_document": [{"beacon": to_beacon}],
+                    "from_document": [{
+                        "beacon": f"weaviate://localhost/{from_chunk['id']}"
+                    }],
+                    "to_document": [{
+                        "beacon": f"weaviate://localhost/{to_chunk['id']}"
+                    }],
                     "relationship_type": to_relationship_type
                 },
                 WEAVIATE_RELATIONSHIP_CLASS
             )
+            to_relationship_id = to_relationship_resp["_additional"]["id"]
 
             # Add a reference from the from_document to the from_relationship_type Relationship object
             self.client.data_object.reference.add(
-                from_uuid=from_id,
+                from_uuid=from_chunk['id'],
                 from_property_name="relationships",
                 to_uuid=from_relationship_id,
                 from_class_name=WEAVIATE_CLASS,
@@ -519,7 +529,7 @@ class WeaviateDataStore(DataStore):
 
             # Add a reference from the to_document to the to_relationship_type Relationship object
             self.client.data_object.reference.add(
-                from_uuid=to_id,
+                from_uuid=to_chunk['id'],
                 from_property_name="relationships",
                 to_uuid=to_relationship_id,
                 from_class_name=WEAVIATE_CLASS,
@@ -529,63 +539,53 @@ class WeaviateDataStore(DataStore):
 
             return True
         except Exception as e:
-            logger.error(f"Failed to add references between {from_id} and {to_id}: {e}")
+            logger.error(f"Failed to add references between {from_document_id} and {to_document_id}: {e}")
             return False
+
 
     async def delete_reference(
         self,
-        from_id: str,
-        to_id: str,
-        id_key: str = "id",  # new parameter
+        from_document_id: str,
+        to_document_id: str,
         consistency_level: weaviate.data.replication.ConsistencyLevel = weaviate.data.replication.ConsistencyLevel.ALL,
     ) -> bool:
         """
-        Deletes a Relationship object and its references to the two documents.
+        Deletes a two-way cross-reference between two documents properties
         """
-        logger.debug(f"Deleting relationship between {from_id} and {to_id}")
+        logger.debug(f"Deleting references between {from_document_id} and {to_document_id}")
         try:
-            # Find the Relationship object
-            relationship_id = self.find_relationship(from_id, to_id, id_key)
+            # Get the first chunk for the from_document
+            from_chunk = self.client.query.get(WEAVIATE_CLASS, ["id", "relationships"]).with_where({"document_id": from_document_id, "index": 0}).with_additional(["id"]).do()
 
-            if relationship_id is None:
-                logger.error(f"No relationship found between {from_id} and {to_id}")
-                return False
+            # Get the first chunk for the to_document
+            to_chunk = self.client.query.get(WEAVIATE_CLASS, ["id", "relationships"]).with_where({"document_id": to_document_id, "index": 0}).with_additional(["id"]).do()
 
-            # Delete the references from the documents to the Relationship object
-            self.client.data_object.reference.delete(
-                from_uuid=from_id,
-                from_property_name="relationships",
-                to_uuid=relationship_id,
-                from_class_name=WEAVIATE_CLASS,
-                to_class_name=WEAVIATE_RELATIONSHIP_CLASS,
-                consistency_level=consistency_level
-            )
-            self.client.data_object.reference.delete(
-                from_uuid=to_id,
-                from_property_name="relationships",
-                to_uuid=relationship_id,
-                from_class_name=WEAVIATE_CLASS,
-                to_class_name=WEAVIATE_RELATIONSHIP_CLASS,
-                consistency_level=consistency_level
-            )
+            # Delete the references from the from_document
+            for relationship in from_chunk['relationships']:
+                self.client.data_object.reference.delete(
+                    from_uuid=from_chunk['id'],
+                    from_property_name="relationships",
+                    to_uuid=relationship["_additional"]["id"],
+                    from_class_name=WEAVIATE_CLASS,
+                    to_class_name=WEAVIATE_RELATIONSHIP_CLASS,
+                    consistency_level=consistency_level
+                )
 
-            # Delete the Relationship object
-            self.client.data_object.delete(relationship_id, WEAVIATE_RELATIONSHIP_CLASS)
+            # Delete the references from the to_document
+            for relationship in to_chunk['relationships']:
+                self.client.data_object.reference.delete(
+                    from_uuid=to_chunk['id'],
+                    from_property_name="relationships",
+                    to_uuid=relationship["_additional"]["id"],
+                    from_class_name=WEAVIATE_CLASS,
+                    to_class_name=WEAVIATE_RELATIONSHIP_CLASS,
+                    consistency_level=consistency_level
+                )
 
             return True
         except Exception as e:
-            logger.error(f"Failed to delete relationship between {from_id} and {to_id}: {e}")
+            logger.error(f"Failed to delete references between {from_document_id} and {to_document_id}: {e}")
             return False
-
-    def find_relationship(client, from_id, to_id, id_key):
-        result = client.query.get(WEAVIATE_RELATIONSHIP_CLASS, [f"from_document {{ ... on {WEAVIATE_CLASS} {{ {id_key} }} }}", f"to_document {{ ... on {WEAVIATE_CLASS} {{ {id_key} }} }}"]).with_additional(["id"]).do()
-        if "data" in result and WEAVIATE_RELATIONSHIP_CLASS in result["data"]["Get"]:
-            for relationship in result["data"]["Get"][WEAVIATE_RELATIONSHIP_CLASS]:
-                from_document_id = relationship["from_document"][0][id_key]
-                to_document_id = relationship["to_document"][0][id_key]
-                if from_document_id == from_id and to_document_id == to_id:
-                    return relationship["_additional"]["id"]
-        return None
 
 
     @staticmethod

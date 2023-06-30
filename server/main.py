@@ -182,8 +182,8 @@ async def add_reference(
 ):
     try:
         success = await datastore.add_reference(        # type: ignore
-            from_id=request.from_id,
-            to_id=request.to_id,
+            from_document_id=request.from_id,
+            to_document_id=request.to_id,
             from_relationship_type=request.from_relationship_type,
             to_relationship_type=request.to_relationship_type
         )
@@ -203,8 +203,8 @@ async def delete_reference(
 ):
     try:
         success = await datastore.delete_reference(     # type: ignore
-            from_id=request.from_id,
-            to_id=request.to_id
+            from_document_id=request.from_id,
+            to_document_id=request.to_id
         )
         return ReferenceResponse(success=success)
     except Exception as e:

@@ -27,7 +27,6 @@ class DocumentChunkMetadata(DocumentMetadata):
 
 
 class DocumentChunk(BaseModel):
-    id: Optional[str] = None    
     text: str
     metadata: DocumentChunkMetadata
     relationships: Optional[DocumentRelationship] = None

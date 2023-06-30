@@ -55,7 +55,7 @@ print(json.dumps(data, indent=4))
 QUERY="eiffel"
 EMBEDDING_MODEL = "text-embedding-ada-002"
 EMBEDDING_SIZE = 1536
-openai.api_key=os.getenv(OPENAI_API_KEY)
+openai.api_key=os.getenv("OPENAI_API_KEY")
 response = openai.Embedding.create(input=[QUERY], model=EMBEDDING_MODEL)
 # Extract the embedding data from the response
 embedding = list(response["data"][0]['embedding'])  # type: ignore
