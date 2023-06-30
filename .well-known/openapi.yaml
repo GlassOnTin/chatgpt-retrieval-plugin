@@ -258,9 +258,6 @@ components:
         - metadata
       type: object
       properties:
-        id:
-          title: Id
-          type: string
         text:
           title: Text
           type: string
@@ -281,9 +278,6 @@ components:
         - score
       type: object
       properties:
-        id:
-          title: Id
-          type: string
         text:
           title: Text
           type: string

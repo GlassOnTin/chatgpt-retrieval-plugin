@@ -338,6 +338,7 @@ class WeaviateDataStore(DataStore):
                     for relationship in resp["relationships"]:
                         from_documents.extend([DocumentReference(document_id=ref["document_id"], title=ref["title"], relationship=relationship["relationship_type"]) for ref in relationship.get("from_document", [])])
                         to_documents.extend([DocumentReference(document_id=ref["document_id"], title=ref["title"], relationship=relationship["relationship_type"]) for ref in relationship.get("to_document", [])])
+                        
                 relationships = DocumentRelationship(from_documents=from_documents, to_documents=to_documents)
                 result = DocumentChunkWithScore(
                     text=resp["text"],
