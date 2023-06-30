@@ -223,7 +223,6 @@ class WeaviateDataStore(DataStore):
                     doc_chunk_dict.pop("metadata")
                     for key, value in metadata.dict().items():
                         doc_chunk_dict[key] = value
-                    doc_chunk_dict["chunk_id"] = doc_chunk_dict.pop("id")
                     doc_chunk_dict["relationships"] = (
                         doc_chunk_dict.pop("relationships").value
                         if doc_chunk_dict["relationships"]
