@@ -477,6 +477,8 @@ class WeaviateDataStore(DataStore):
 
             # Get the first chunk for the from_document
             from_chunk = self.client.query.get(WEAVIATE_CLASS).with_where(from_filter).with_additional(["id"]).do()
+            
+            print(f"from_chunk={from_chunk}")
 
             # Check if the 'id' is in the '_additional' field of the response
             if '_additional' in from_chunk and 'id' in from_chunk['_additional']:
@@ -489,9 +491,8 @@ class WeaviateDataStore(DataStore):
 
             # Get the first chunk for the to_document
             to_chunk = self.client.query.get(WEAVIATE_CLASS).with_where(to_filter).with_additional(["id"]).do()
-
-            print(from_chunk)
-            print(to_chunk)
+            
+            print(f"to_chunk={to_chunk}")
             
             # Check if the 'id' is in the '_additional' field of the response
             if '_additional' in to_chunk and 'id' in to_chunk['_additional']:
