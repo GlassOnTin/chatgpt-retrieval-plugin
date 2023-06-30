@@ -563,16 +563,34 @@ class WeaviateDataStore(DataStore):
         """
         logger.debug(f"Deleting references between {from_document_id} and {to_document_id}")
         try:
+            # Build the filter for the from_document
+            from_filter = self.build_filters(DocumentChunkMetadataFilter(document_id=from_document_id, index=0))
+
             # Get the first chunk for the from_document
-            from_chunk = self.client.query.get(WEAVIATE_CLASS, ["id", "relationships"]).with_where({"document_id": from_document_id, "index": 0}).with_additional(["id"]).do()
+            from_chunk = self.client.query.get(WEAVIATE_CLASS).with_where(from_filter).with_additional(["id"]).do()
+
+            # Check if the 'id' is in the '_additional' field of the response
+            if '_additional' in from_chunk and 'id' in from_chunk['_additional']:
+                from_chunk_id = from_chunk['_additional']['id']
+            else:
+                raise Exception("ID not found in the response for the from_document")
+
+            # Build the filter for the to_document
+            to_filter = self.build_filters(DocumentChunkMetadataFilter(document_id=to_document_id, index=0))
 
             # Get the first chunk for the to_document
-            to_chunk = self.client.query.get(WEAVIATE_CLASS, ["id", "relationships"]).with_where({"document_id": to_document_id, "index": 0}).with_additional(["id"]).do()
+            to_chunk = self.client.query.get(WEAVIATE_CLASS).with_where(to_filter).with_additional(["id"]).do()
+
+            # Check if the 'id' is in the '_additional' field of the response
+            if '_additional' in to_chunk and 'id' in to_chunk['_additional']:
+                to_chunk_id = to_chunk['_additional']['id']
+            else:
+                raise Exception("ID not found in the response for the to_document")
 
             # Delete the references from the from_document
             for relationship in from_chunk['relationships']:
                 self.client.data_object.reference.delete(
-                    from_uuid=from_chunk['id'],
+                    from_uuid=from_chunk_id,
                     from_property_name="relationships",
                     to_uuid=relationship["_additional"]["id"],
                     from_class_name=WEAVIATE_CLASS,
@@ -583,7 +601,7 @@ class WeaviateDataStore(DataStore):
             # Delete the references from the to_document
             for relationship in to_chunk['relationships']:
                 self.client.data_object.reference.delete(
-                    from_uuid=to_chunk['id'],
+                    from_uuid=to_chunk_id,
                     from_property_name="relationships",
                     to_uuid=relationship["_additional"]["id"],
                     from_class_name=WEAVIATE_CLASS,
