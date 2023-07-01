@@ -559,7 +559,7 @@ class WeaviateDataStore(DataStore):
         Create a Relationship object
         """
         try:
-            relationship_resp = self.client.data_object.create(
+            relationship_id = self.client.data_object.create(
                 {
                     "from_document": [{
                         "beacon": f"weaviate://localhost/{from_chunk_id}"
@@ -571,8 +571,6 @@ class WeaviateDataStore(DataStore):
                 }, 
                 WEAVIATE_RELATIONSHIP_CLASS
             )
-    
-            relationship_id = relationship_resp["_additional"]["id"]
     
             return relationship_id
         except Exception as e:
