@@ -432,7 +432,7 @@ class WeaviateDataStore(DataStore):
             "index": {"operator": "Equal", "value_key": "valueInt"},
             "default": {"operator": "Equal", "value_key": "valueString"}
         
-        print(f"filter={filter})
+        print(f"filter={filter}")
         
         for attr, value in filter.__dict__.items():
             if value is not None:
