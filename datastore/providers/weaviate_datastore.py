@@ -249,7 +249,7 @@ class WeaviateDataStore(DataStore):
     async def _query(self, queries: List[QueryWithEmbedding]) -> List[QueryResult]:
         async def _single_query(query: QueryWithEmbedding) -> QueryResult:
             try:
-                result = await self._execute_query(query)
+                result = self._execute_query(query)
             except Exception as e:
                 logger.error(f"Error executing query: {e}", exc=True)
                 return QueryResult(query=query.query, results=[])
@@ -269,7 +269,7 @@ class WeaviateDataStore(DataStore):
         query_builder = self.client.query.get(WEAVIATE_CLASS, self._get_fields()).with_hybrid(query=query.query, alpha=0.5, vector=query.embedding).with_limit(query.top_k).with_additional(["id","score","vector"])
         if filters_:
             query_builder = query_builder.with_where(filters_)
-        return await query_builder.do()
+        return query_builder.do()
         
     
     def _get_fields(self):
