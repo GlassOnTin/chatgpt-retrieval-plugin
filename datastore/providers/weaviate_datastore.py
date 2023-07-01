@@ -244,110 +244,79 @@ class WeaviateDataStore(DataStore):
                 doc_ids.append(doc_id)
             batch.flush()
         return doc_ids
+        
 
-    async def _query(
-        self,
-        queries: List[QueryWithEmbedding],
-    ) -> List[QueryResult]:
-        """
-        Takes in a list of queries with embeddings and filters and returns a list of query results with matching document chunks and scores.
-        """
-
+    async def _query(self, queries: List[QueryWithEmbedding]) -> List[QueryResult]:
         async def _single_query(query: QueryWithEmbedding) -> QueryResult:
-            logger.debug(f"Query: {query.query}")
-            if not hasattr(query, "filter") or not query.filter:
-                if query.query:
-                    logger.debug(f"Querying without filter")
-                    result = (
-                        self.client.query.get(
-                            WEAVIATE_CLASS,
-                            [
-                                "chunk_id",
-                                "document_id",
-                                "index",
-                                "title",                                
-                                "text",
-                                "type",
-                                "source",
-                                "created_at",
-                                "status",
-                                "relationships { ... on " + WEAVIATE_RELATIONSHIP_CLASS + " { relationship_type, from_document { ... on " + WEAVIATE_CLASS + " { document_id, title } }, to_document { ... on " + WEAVIATE_CLASS + " { document_id, title } } } }"
-                            ],
-                        )
-                        .with_hybrid(query=query.query, alpha=0.5, vector=query.embedding)
-                        .with_limit(query.top_k)
-                        .with_additional(["id","score","vector"])
-                        .do()
-                    )
-                    
-            else:
-                filters_ = WeaviateDataStore.build_filters(query.filter)
-                
-                # Added this check
-                if query.query:
-                    logger.debug(f"Querying with filters")
-                    result = (
-                        self.client.query.get(
-                            WEAVIATE_CLASS,
-                            [
-                                "chunk_id",
-                                "document_id",
-                                "index",
-                                "title",                                
-                                "text",
-                                "type",
-                                "source",
-                                "created_at",
-                                "status",
-                                "relationships { ... on " + WEAVIATE_RELATIONSHIP_CLASS + " { relationship_type, from_document { ... on " + WEAVIATE_CLASS + " { document_id, title } }, to_document { ... on " + WEAVIATE_CLASS + " { document_id, title } } } }"
-                            ],
-                        )                        
-                        .with_hybrid(query=query.query, alpha=0.5, vector=query.embedding)
-                        .with_where(filters_)
-                        .with_limit(query.top_k)
-                        .with_additional(["id","score","vector"])
-                        .do()
-                    )
-                
-            logger.debug(f"Result: {result}")
-            query_results: List[DocumentChunkWithScore] = []
+            try:
+                result = await self._execute_query(query)
+            except Exception as e:
+                logger.error(f"Error executing query: {e}", exc=True)
+                return QueryResult(query=query.query, results=[])
+    
             if "data" not in result:
                 logger.error(f"Query result does not contain 'data': {result}")
                 return QueryResult(query=query.query, results=[])
-
-            else:
-                response = result["data"]["Get"][WEAVIATE_CLASS]
-
-            response = result["data"]["Get"][WEAVIATE_CLASS]
-
-            for resp in response:
-                logger.debug(f"Processing document chunk: {resp}")
-                from_documents = []
-                to_documents = []
-                if resp.get("relationships"):
-                    for relationship in resp["relationships"]:
-                        from_documents.extend([DocumentReference(document_id=ref["document_id"], title=ref["title"], relationship=relationship["relationship_type"]) for ref in relationship.get("from_document", [])])
-                        to_documents.extend([DocumentReference(document_id=ref["document_id"], title=ref["title"], relationship=relationship["relationship_type"]) for ref in relationship.get("to_document", [])])
-                        
-                relationships = DocumentRelationship(from_documents=from_documents, to_documents=to_documents)
-                result = DocumentChunkWithScore(
-                    text=resp["text"],
-                    #embedding=resp["_additional"]["vector"],
-                    score=resp["_additional"]["score"],
-                    metadata=DocumentChunkMetadata(
-                        document_id=resp["document_id"] if resp["document_id"] else "",
-                        title=resp["title"] if resp["title"] else "",
-                        type=resp["type"] if resp["type"] else "",
-                        source=resp["source"] if resp["source"] else "",
-                        created_at=resp["created_at"],
-                        status=resp["status"] if resp["status"] else ""
-                    ),
-                    relationships=relationships
-                )
-                query_results.append(result)
+    
+            query_results = self._process_response(result)
             return QueryResult(query=query.query, results=query_results)
-
+    
         return await asyncio.gather(*[_single_query(query) for query in queries])
+    
+    
+    async def _execute_query(self, query: QueryWithEmbedding):
+        filters_ = WeaviateDataStore.build_filters(query.filter) if hasattr(query, "filter") and query.filter else None
+        query_builder = self.client.query.get(WEAVIATE_CLASS, self._get_fields()).with_hybrid(query=query.query, alpha=0.5, vector=query.embedding).with_limit(query.top_k).with_additional(["id","score","vector"])
+        if filters_:
+            query_builder = query_builder.with_where(filters_)
+        return await query_builder.do()
+        
+    
+    def _get_fields(self):
+        return [
+            "chunk_id",
+            "document_id",
+            "index",
+            "title",                                
+            "text",
+            "type",
+            "source",
+            "created_at",
+            "status",
+            "relationships { ... on " + WEAVIATE_RELATIONSHIP_CLASS + " { relationship_type, from_document { ... on " + WEAVIATE_CLASS + " { document_id, title } }, to_document { ... on " + WEAVIATE_CLASS + " { document_id, title } } } }"
+        ]
+    
+    def _process_response(self, result):
+        try:
+            logger.info(f"_process_response{result}")
+            response = result["data"]["Get"][WEAVIATE_CLASS]
+            return [self._process_document_chunk(resp) for resp in response]
+            
+        except Exception as e:
+            logger.error(f"Failed to process response {result}: {e}", exc_info=True)
+            raise
+    
+    def _process_document_chunk(self, resp):
+        from_documents = []
+        to_documents = []
+        if resp.get("relationships"):
+            for relationship in resp["relationships"]:
+                from_documents.extend([DocumentReference(document_id=ref["document_id"], title=ref["title"], relationship=relationship["relationship_type"]) for ref in relationship.get("from_document", [])])
+                to_documents.extend([DocumentReference(document_id=ref["document_id"], title=ref["title"], relationship=relationship["relationship_type"]) for ref in relationship.get("to_document", [])])
+        relationships = DocumentRelationship(from_documents=from_documents, to_documents=to_documents)
+        return DocumentChunkWithScore(
+            text=resp["text"],
+            score=resp["_additional"]["score"],
+            metadata=DocumentChunkMetadata(
+                document_id=resp["document_id"] if resp["document_id"] else "",
+                title=resp["title"] if resp["title"] else "",
+                type=resp["type"] if resp["type"] else "",
+                source=resp["source"] if resp["source"] else "",
+                created_at=resp["created_at"],
+                status=resp["status"] if resp["status"] else ""
+            ),
+            relationships=relationships
+        )
 
     async def delete(
         self,
