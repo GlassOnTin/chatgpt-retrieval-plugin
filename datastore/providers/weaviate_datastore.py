@@ -548,7 +548,7 @@ class WeaviateDataStore(DataStore):
 
             return True
         except Exception as e:
-            logger.error(f"Failed to add references between {from_document_id} and {to_document_id}: {e}")
+            logger.error(f"Failed to add references between {from_document_id} and {to_document_id}: {e}", exc_info=True)
             return False
 
 
@@ -606,7 +606,7 @@ class WeaviateDataStore(DataStore):
 
             return True
         except Exception as e:
-            logger.error(f"Failed to delete references between {from_document_id} and {to_document_id}: {e}")
+            logger.error(f"Failed to delete references between {from_document_id} and {to_document_id}: {e}", exc_info=True)
             return False
 
 
