@@ -269,7 +269,7 @@ class WeaviateDataStore(DataStore):
         query_builder = self.client.query.get(WEAVIATE_CLASS, self._get_fields()).with_hybrid(query=query.query, alpha=0.5, vector=query.embedding).with_limit(query.top_k).with_additional(["id","score","vector"])
         if filters_:
             query_builder = query_builder.with_where(filters_)
-        return query_builder.do()
+        return await query_builder.do()
         
     
     def _get_fields(self):
