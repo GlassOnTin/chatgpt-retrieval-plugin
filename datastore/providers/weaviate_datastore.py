@@ -461,7 +461,6 @@ class WeaviateDataStore(DataStore):
 
         return {"operator": "And", "operands": operands}
 
-    
     async def add_reference(
         self,
         from_document_id: str,
@@ -475,106 +474,27 @@ class WeaviateDataStore(DataStore):
         """
         logger.debug(f"Adding references between {from_document_id} and {to_document_id}")
         try:
-            # Build the filter for the from_document
-            from_filter = self.build_filters(DocumentChunkMetadataFilter(document_id=from_document_id, index=0))
-
-            # Get the first chunk for the from_document
-            from_chunk = self.client.query.get(WEAVIATE_CLASS).with_where(from_filter).with_additional(["id"]).do()
-            
-            print(f"from_chunk={from_chunk}")
-        
-        except Exception as e:
-            logger.error(f"Failed to get chunks for {from_document_id}: {e}", exc_info=True)
-            return False
-         
-        try:
-            from_chunk_id = from_chunk['data']['Get']['OpenAIDocument'][0]['_additional']['id']
-            
-        except Exception as e:
-            logger.error(f"Failed to extract id from {from_chunk}: {e}", exc_info=True)
-            return False
-            
-        try:
-            # Build the filter for the to_document
-            to_filter = self.build_filters(DocumentChunkMetadataFilter(document_id=to_document_id, index=0))
-
-            # Get the first chunk for the to_document
-            to_chunk = self.client.query.get(WEAVIATE_CLASS).with_where(to_filter).with_additional(["id"]).do()
-            
-            print(f"to_chunk={to_chunk}")
-        
-        except Exception as e:
-            logger.error(f"Failed to get chunks for {from_document_id}: {e}", exc_info=True)
-            return False
-            
-        try:
-            # Check if the 'id' is in the '_additional' field of the response
-            to_chunk_id = to_chunk['data']['Get']['OpenAIDocument'][0]['_additional']['id']
-            
-        except Exception as e:
-            logger.error(f"Failed to extract id from {to_chunk}: {e}", exc_info=True)
-            return False
-
-        try:
+            # Get the chunk IDs for the from_document and to_document
+            from_chunk_id = self.get_chunk_id(from_document_id)
+            to_chunk_id = self.get_chunk_id(to_document_id)
+    
             # Create a Relationship object for the from_relationship_type
-            from_relationship_id = self.client.data_object.create(
-                {
-                    "from_document": [{
-                        "beacon": f"weaviate://localhost/{from_chunk_id}"
-                    }],
-                    "to_document": [{
-                        "beacon": f"weaviate://localhost/{to_chunk_id}"
-                    }],
-                    "relationship_type": from_relationship_type
-                }, 
-                WEAVIATE_RELATIONSHIP_CLASS
-            )
-
+            from_relationship_id = self.create_relationship(from_chunk_id, to_chunk_id, from_relationship_type)
+    
             # Create a Relationship object for the to_relationship_type
-            to_relationship_id = self.client.data_object.create(
-                {
-                    "from_document": [{
-                        "beacon": f"weaviate://localhost/{from_chunk_id}"
-                    }],
-                    "to_document": [{
-                        "beacon": f"weaviate://localhost/{to_chunk_id}"
-                    }],
-                    "relationship_type": to_relationship_type
-                },
-                WEAVIATE_RELATIONSHIP_CLASS
-            )
-        except Exception as e:
-            logger.error(f"Failed to create relationship data objects: {e}", exc_info=True)
-            return False
-            
-        try:
-            
+            to_relationship_id = self.create_relationship(from_chunk_id, to_chunk_id, to_relationship_type)
+    
             # Add a reference from the from_document to the from_relationship_type Relationship object
-            self.client.data_object.reference.add(
-                from_uuid=from_chunk_id,
-                from_property_name="relationships",
-                to_uuid=from_relationship_id,
-                from_class_name=WEAVIATE_CLASS,
-                to_class_name=WEAVIATE_RELATIONSHIP_CLASS,
-                consistency_level=consistency_level
-            )
-
+            self.add_reference_to_relationship(from_chunk_id, from_relationship_id, consistency_level)
+    
             # Add a reference from the to_document to the to_relationship_type Relationship object
-            self.client.data_object.reference.add(
-                from_uuid=to_chunk_id,
-                from_property_name="relationships",
-                to_uuid=to_relationship_id,
-                from_class_name=WEAVIATE_CLASS,
-                to_class_name=WEAVIATE_RELATIONSHIP_CLASS,
-                consistency_level=consistency_level
-            )
-
+            self.add_reference_to_relationship(to_chunk_id, to_relationship_id, consistency_level)
+    
             return True
         except Exception as e:
             logger.error(f"Failed to add references between {from_document_id} and {to_document_id}: {e}", exc_info=True)
             return False
-
-
+    
     async def delete_reference(
         self,
         from_document_id: str,
@@ -586,52 +506,95 @@ class WeaviateDataStore(DataStore):
         """
         logger.debug(f"Deleting references between {from_document_id} and {to_document_id}")
         try:
-            # Build the filter for the from_document
-            from_filter = self.build_filters(DocumentChunkMetadataFilter(document_id=from_document_id, index=0))
-
-            # Get the first chunk for the from_document
-            from_chunk = self.client.query.get(WEAVIATE_CLASS).with_where(from_filter).with_additional(["id"]).do()
-
-            from_chunk_id = from_chunk['data']['Get']['OpenAIDocument'][0]['_additional']['id']
-
-            # Build the filter for the to_document
-            to_filter = self.build_filters(DocumentChunkMetadataFilter(document_id=to_document_id, index=0))
-
-            # Get the first chunk for the to_document
-            to_chunk = self.client.query.get(WEAVIATE_CLASS).with_where(to_filter).with_additional(["id"]).do()
-            
-            print(f"to_chunk={to_chunk}")
-            
-            # Check if the 'id' is in the '_additional' field of the response
-            to_chunk_id = to_chunk['data']['Get']['OpenAIDocument'][0]['_additional']['id']
-            
-            # Delete the references from the from_document
-            for relationship in from_chunk['relationships']:
-                self.client.data_object.reference.delete(
-                    from_uuid=from_chunk_id,
-                    from_property_name="relationships",
-                    to_uuid=relationship["_additional"]["id"],
-                    from_class_name=WEAVIATE_CLASS,
-                    to_class_name=WEAVIATE_RELATIONSHIP_CLASS,
-                    consistency_level=consistency_level
-                )
-
-            # Delete the references from the to_document
-            for relationship in to_chunk['relationships']:
-                self.client.data_object.reference.delete(
-                    from_uuid=to_chunk_id,
-                    from_property_name="relationships",
-                    to_uuid=relationship["_additional"]["id"],
-                    from_class_name=WEAVIATE_CLASS,
-                    to_class_name=WEAVIATE_RELATIONSHIP_CLASS,
-                    consistency_level=consistency_level
-                )
-
+            # Get the chunk IDs for the from_document and to_document
+            from_chunk_id = self.get_chunk_id(from_document_id)
+            to_chunk_id = self.get_chunk_id(to_document_id)
+    
+            # Delete the reference from the from_document to the to_document
+            self.client.data_object.reference.delete(
+                from_uuid=from_chunk_id,
+                from_property_name="relationships",
+                to_uuid=to_chunk_id,
+                from_class_name=WEAVIATE_CLASS,
+                to_class_name=WEAVIATE_RELATIONSHIP_CLASS,
+                consistency_level=consistency_level
+            )
+    
+            # Delete the reference from the to_document to the from_document
+            self.client.data_object.reference.delete(
+                from_uuid=to_chunk_id,
+                from_property_name="relationships",
+                to_uuid=from_chunk_id,
+                from_class_name=WEAVIATE_CLASS,
+                to_class_name=WEAVIATE_RELATIONSHIP_CLASS,
+                consistency_level=consistency_level
+            )
+    
             return True
         except Exception as e:
             logger.error(f"Failed to delete references between {from_document_id} and {to_document_id}: {e}", exc_info=True)
             return False
 
+    def get_chunk_id(self, document_id: str) -> str:
+        """
+        Get the chunk ID for a document
+        """
+        try:
+            # Build the filter for the document
+            document_filter = self.build_filters(DocumentChunkMetadataFilter(document_id=document_id, index=0))
+    
+            # Get the first chunk for the document
+            document_chunk = self.client.query.get(WEAVIATE_CLASS).with_where(document_filter).with_additional(["id"]).do()
+    
+            # Extract the 'id' from the '_additional' field of the response
+            chunk_id = document_chunk['data']['Get']['OpenAIDocument'][0]['_additional']['id']
+    
+            return chunk_id
+        except Exception as e:
+            logger.error(f"Failed to get chunk ID for {document_id}: {e}", exc_info=True)
+            raise
+
+    def create_relationship(self, from_chunk_id: str, to_chunk_id: str, relationship_type: str) -> str:
+        """
+        Create a Relationship object
+        """
+        try:
+            relationship_resp = self.client.data_object.create(
+                {
+                    "from_document": [{
+                        "beacon": f"weaviate://localhost/{from_chunk_id}"
+                    }],
+                    "to_document": [{
+                        "beacon": f"weaviate://localhost/{to_chunk_id}"
+                    }],
+                    "relationship_type": relationship_type
+                }, 
+                WEAVIATE_RELATIONSHIP_CLASS
+            )
+    
+            relationship_id = relationship_resp["_additional"]["id"]
+    
+            return relationship_id
+        except Exception as e:
+            logger.error(f"Failed to create relationship data object: {e}", exc_info=True)
+            raise
+    
+    def add_reference_to_relationship(self, chunk_id: str, relationship_id: str, consistency_level: weaviate.data.replication.ConsistencyLevel) -> None:
+        """
+        Add a reference from a document to a Relationship object
+        """
+        try:
+            self.client.data_object.reference.add(
+                from_uuid=chunk_id,
+                from_property_name="relationships",
+                to_uuid=relationship_id,
+                from_class_name=WEAVIATE_CLASS,
+                to_class_name=WEAVIATE_RELATIONSHIP_CLASS,
+                consistency_level=consistency_level
+            )
+        except Exception as e:
+            logger.error(f"Failed to add reference to relationship: {e}", exc_info=True)
+            raise
 
     @staticmethod
     def _is_valid_weaviate_id(candidate_id: str) -> bool:
