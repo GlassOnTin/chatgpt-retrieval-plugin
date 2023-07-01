@@ -482,9 +482,19 @@ class WeaviateDataStore(DataStore):
             from_chunk = self.client.query.get(WEAVIATE_CLASS).with_where(from_filter).with_additional(["id"]).do()
             
             print(f"from_chunk={from_chunk}")
+        
+        except Exception as e:
+            logger.error(f"Failed to get chunks for {from_document_id}: {e}", exc_info=True)
+            return False
          
+        try:
             from_chunk_id = from_chunk['data']['Get']['OpenAIDocument'][0]['_additional']['id']
-
+            
+        except Exception as e:
+            logger.error(f"Failed to extract id from {from_chunk}: {e}", exc_info=True)
+            return False
+            
+        try:
             # Build the filter for the to_document
             to_filter = self.build_filters(DocumentChunkMetadataFilter(document_id=to_document_id, index=0))
 
@@ -492,12 +502,22 @@ class WeaviateDataStore(DataStore):
             to_chunk = self.client.query.get(WEAVIATE_CLASS).with_where(to_filter).with_additional(["id"]).do()
             
             print(f"to_chunk={to_chunk}")
+        
+        except Exception as e:
+            logger.error(f"Failed to get chunks for {from_document_id}: {e}", exc_info=True)
+            return False
             
+        try:
             # Check if the 'id' is in the '_additional' field of the response
             to_chunk_id = to_chunk['data']['Get']['OpenAIDocument'][0]['_additional']['id']
+            
+        except Exception as e:
+            logger.error(f"Failed to extract id from {to_chunk}: {e}", exc_info=True)
+            return False
 
+        try:
             # Create a Relationship object for the from_relationship_type
-            from_relationship_resp = self.client.data_object.create(
+            from_relationship_id = self.client.data_object.create(
                 {
                     "from_document": [{
                         "beacon": f"weaviate://localhost/{from_chunk_id}"
@@ -509,10 +529,9 @@ class WeaviateDataStore(DataStore):
                 }, 
                 WEAVIATE_RELATIONSHIP_CLASS
             )
-            from_relationship_id = from_relationship_resp["_additional"]["id"]
 
             # Create a Relationship object for the to_relationship_type
-            to_relationship_resp = self.client.data_object.create(
+            to_relationship_id = self.client.data_object.create(
                 {
                     "from_document": [{
                         "beacon": f"weaviate://localhost/{from_chunk_id}"
@@ -524,8 +543,12 @@ class WeaviateDataStore(DataStore):
                 },
                 WEAVIATE_RELATIONSHIP_CLASS
             )
-            to_relationship_id = to_relationship_resp["_additional"]["id"]
-
+        except Exception as e:
+            logger.error(f"Failed to create relationship data objects: {e}", exc_info=True)
+            return False
+            
+        try:
+            
             # Add a reference from the from_document to the from_relationship_type Relationship object
             self.client.data_object.reference.add(
                 from_uuid=from_chunk_id,
