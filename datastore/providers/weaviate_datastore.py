@@ -431,6 +431,7 @@ class WeaviateDataStore(DataStore):
             "end_date": {"operator": "LessThanEqual", "value_key": "valueDate"},
             "index": {"operator": "Equal", "value_key": "valueInt"},
             "default": {"operator": "Equal", "value_key": "valueString"}
+        }
         
         print(f"filter={filter}")
         
