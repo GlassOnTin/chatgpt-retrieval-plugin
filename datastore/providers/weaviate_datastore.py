@@ -245,6 +245,20 @@ class WeaviateDataStore(DataStore):
             batch.flush()
         return doc_ids
         
+    async def _query_async(self, queries: List[QueryWithEmbedding]) -> List[QueryResult]:
+    
+        return await asyncio.gather(*[self._single_query(query) for query in queries])
+    
+    
+    async def _query(self, queries: List[QueryWithEmbedding]) -> List[QueryResult]:
+        results = []
+        for query in queries:
+            result = await self._single_query(query)
+            results.append(result)
+            
+        return results
+
+
     async def _single_query(self, query: QueryWithEmbedding) -> QueryResult:
             
         try:
@@ -260,19 +274,6 @@ class WeaviateDataStore(DataStore):
         
         return QueryResult(query=query.query, results=query_results)
 
-    async def _query_async(self, queries: List[QueryWithEmbedding]) -> List[QueryResult]:
-    
-        return await asyncio.gather(*[self._single_query(query) for query in queries])
-    
-    
-    async def _query(self, queries: List[QueryWithEmbedding]) -> List[QueryResult]:
-        results = []
-        for query in queries:
-            result = await self._single_query(query)
-            results.append(result)
-            
-        return results
-
     def _execute_query(self, query: QueryWithEmbedding):
         try:
             filters_ = WeaviateDataStore.build_filters(query.filter) if hasattr(query, "filter") and query.filter else None
@@ -283,6 +284,7 @@ class WeaviateDataStore(DataStore):
                 query_builder = query_builder.with_where(filters_)
                 
             return query_builder.do()
+            
         except Exception as e:
             logger.error(f"Failed to execute_query {result}: {e}", exc_info=True)
             raise
@@ -307,9 +309,11 @@ class WeaviateDataStore(DataStore):
             logger.info(f"_process_response{result}")
             
             if "data" in result and "Get" in result["data"] and WEAVIATE_CLASS in result["data"]["Get"]:
+                
                 logger.info("Here!")
                 response = result["data"]["Get"][WEAVIATE_CLASS]
                 logger.info("Now!")
+                
             else:
                 logger.error(f"Expected keys not found in result: {result}")
                 return []
@@ -318,7 +322,7 @@ class WeaviateDataStore(DataStore):
             
         except Exception as e:
             logger.error(f"Failed to process response {result}: {e}", exc_info=True)
-            return []
+            raise
         
     def _process_document_chunk(self, resp):
         try:
@@ -347,7 +351,7 @@ class WeaviateDataStore(DataStore):
                 relationships=relationships
             )
             
-            logger.info(f"doc_chunk={doc_chunk}")
+            logger.debug(f"doc_chunk={doc_chunk}")
         
         except Exception as e:
             logger.error(f"Failed to process document chunk {resp}: {e}", exc_info=True)
