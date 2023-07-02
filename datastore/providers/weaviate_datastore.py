@@ -268,14 +268,18 @@ class WeaviateDataStore(DataStore):
     
     
     def _execute_query(self, query: QueryWithEmbedding):
-        filters_ = WeaviateDataStore.build_filters(query.filter) if hasattr(query, "filter") and query.filter else None
-        
-        query_builder = self.client.query.get(WEAVIATE_CLASS, self._get_fields()).with_hybrid(query=query.query, alpha=0.5, vector=query.embedding).with_limit(query.top_k).with_additional(["id","score","vector"])
-        
-        if filters_:
-            query_builder = query_builder.with_where(filters_)
+        try:
+            filters_ = WeaviateDataStore.build_filters(query.filter) if hasattr(query, "filter") and query.filter else None
             
-        return query_builder.do()
+            query_builder = self.client.query.get(WEAVIATE_CLASS, self._get_fields()).with_hybrid(query=query.query, alpha=0.5, vector=query.embedding).with_limit(query.top_k).with_additional(["id","score"])
+            
+            if filters_:
+                query_builder = query_builder.with_where(filters_)
+                
+            return query_builder.do()
+        except Exception as e:
+            logger.error(f"Failed to execute_query {result}: {e}", exc_info=True)
+            raise
         
     
     def _get_fields(self):
@@ -303,29 +307,34 @@ class WeaviateDataStore(DataStore):
             raise
     
     def _process_document_chunk(self, resp):
-        from_documents = []
-        to_documents = []
-        if resp.get("relationships"):
-            for relationship in resp["relationships"]:
-                from_documents.extend([DocumentReference(document_id=ref["document_id"], title=ref["title"], relationship=relationship["relationship_type"]) for ref in relationship.get("from_document", [])])
-                
-                to_documents.extend([DocumentReference(document_id=ref["document_id"], title=ref["title"], relationship=relationship["relationship_type"]) for ref in relationship.get("to_document", [])])
-                
-        relationships = DocumentRelationship(from_documents=from_documents, to_documents=to_documents)
+        try:
+            from_documents = []
+            to_documents = []
+            if resp.get("relationships"):
+                for relationship in resp["relationships"]:
+                    from_documents.extend([DocumentReference(document_id=ref["document_id"], title=ref["title"], relationship=relationship["relationship_type"]) for ref in relationship.get("from_document", [])])
+                    
+                    to_documents.extend([DocumentReference(document_id=ref["document_id"], title=ref["title"], relationship=relationship["relationship_type"]) for ref in relationship.get("to_document", [])])
+                    
+            relationships = DocumentRelationship(from_documents=from_documents, to_documents=to_documents)
+            
+            return DocumentChunkWithScore(
+                text=resp["text"],
+                score=resp["_additional"]["score"],
+                metadata=DocumentChunkMetadata(
+                    document_id=resp["document_id"] if resp["document_id"] else "",
+                    title=resp["title"] if resp["title"] else "",
+                    type=resp["type"] if resp["type"] else "",
+                    source=resp["source"] if resp["source"] else "",
+                    created_at=resp["created_at"],
+                    status=resp["status"] if resp["status"] else ""
+                ),
+                relationships=relationships
+            )
         
-        return DocumentChunkWithScore(
-            text=resp["text"],
-            score=resp["_additional"]["score"],
-            metadata=DocumentChunkMetadata(
-                document_id=resp["document_id"] if resp["document_id"] else "",
-                title=resp["title"] if resp["title"] else "",
-                type=resp["type"] if resp["type"] else "",
-                source=resp["source"] if resp["source"] else "",
-                created_at=resp["created_at"],
-                status=resp["status"] if resp["status"] else ""
-            ),
-            relationships=relationships
-        )
+        except Exception as e:
+            logger.error(f"Failed to execute_query {result}: {e}", exc_info=True)
+            raise
 
     async def delete(
         self,
