@@ -24,7 +24,7 @@ from datastore.factory import get_datastore
 from services.file import get_document_from_file
 
 from models.models import DocumentMetadata
-
+import logging
 
 bearer_scheme = HTTPBearer()
 BEARER_TOKEN = os.environ.get("BEARER_TOKEN")
@@ -74,7 +74,7 @@ async def upsert_file(
         ids = await datastore.upsert([document])    # type: ignore
         return UpsertResponse(ids=ids)
     except Exception as e:
-        print("Error:", e)
+        logging.error(f"Error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"str({e})")
 
 
@@ -90,7 +90,7 @@ async def upsert_main(
         ids = await datastore.upsert(request.documents) # type: ignore
         return UpsertResponse(ids=ids)
     except Exception as e:
-        print("Error:", e)
+        logging.error(f"Error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"str({e})")
 
 
@@ -107,10 +107,9 @@ async def upsert(
         ids = await datastore.upsert(request.documents) # type: ignore
         return UpsertResponse(ids=ids)
     except Exception as e:
-        print("Error:", e)
+        logging.error(f"Error: {e}", exc_info=True))
         raise HTTPException(status_code=500, detail=f"str({e})")
-
-
+        
 @app.post(
     "/query",
     response_model=QueryResponse,
@@ -123,12 +122,13 @@ async def query_main(
         results = await datastore.query(request.queries) # type: ignore
 
         for result in results:
-            print(f"Query result: {result}")
+            logging.info(f"Query result: {result}")
 
         return QueryResponse(results=results)
     except Exception as e:
-        print("Error:", e)
-        raise HTTPException(status_code=500, detail=f"str({e})")
+        logging.error(f"Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+        
 
 @sub_app.post(
     "/query",
@@ -144,7 +144,7 @@ async def query(
         results = await datastore.query(request.queries) # type: ignore
         return QueryResponse(results=results)
     except Exception as e:
-        print("Error:", e)
+        logging.error(f"Error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"str({e})")
 
 @app.post(
@@ -168,7 +168,7 @@ async def delete(
         )
         return DeleteResponse(success=success)
     except Exception as e:
-        print("Error:", e)
+        logging.error(f"Error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"str({e})")
 
 @app.post(
@@ -189,7 +189,7 @@ async def add_reference(
         )
         return ReferenceResponse(success=success)
     except Exception as e:
-        print("Error:", e)
+        logging.error(f"Error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"str({e})")
     
 @app.post(
@@ -208,7 +208,7 @@ async def delete_reference(
         )
         return ReferenceResponse(success=success)
     except Exception as e:
-        print("Error:", e)
+        logging.error(f"Error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"str({e})")
 
 @app.on_event("startup")
