@@ -308,7 +308,7 @@ class WeaviateDataStore(DataStore):
         except Exception as e:
             logger.error(f"Failed to process response {result}: {e}", exc_info=True)
             raise
-    
+        
     def _process_document_chunk(self, resp):
         try:
             logger.info(f"_process_document_chunk{resp}")
@@ -317,9 +317,8 @@ class WeaviateDataStore(DataStore):
             to_documents = []
             if resp.get("relationships") is not None:
                 for relationship in resp["relationships"]:
-                    from_documents.extend([DocumentReference(document_id=ref["document_id"], title=ref["title"], relationship=relationship["relationship_type"]) for ref in relationship.get("from_document", [])])
-                    
-                    to_documents.extend([DocumentReference(document_id=ref["document_id"], title=ref["title"], relationship=relationship["relationship_type"]) for ref in relationship.get("to_document", [])])
+                    from_documents.extend([DocumentReference(document_id=ref["document_id"], title=ref["title"], relationship=relationship["relationship_type"]) for ref in relationship.get("from_document", []) if relationship.get("from_document")])
+                    to_documents.extend([DocumentReference(document_id=ref["document_id"], title=ref["title"], relationship=relationship["relationship_type"]) for ref in relationship.get("to_document", []) if relationship.get("to_document")])
                     
             relationships = DocumentRelationship(from_documents=from_documents, to_documents=to_documents)
             
@@ -338,7 +337,7 @@ class WeaviateDataStore(DataStore):
             )
         
         except Exception as e:
-            logger.error(f"Failed to execute_query {result}: {e}", exc_info=True)
+            logger.error(f"Failed to process document chunk {resp}: {e}", exc_info=True)
             raise
 
     async def delete(
