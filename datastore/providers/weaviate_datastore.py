@@ -258,6 +258,9 @@ class WeaviateDataStore(DataStore):
                 return QueryResult(query=query.query, results=[])
     
             query_results = self._process_response(result)
+            
+            logger.info(f"Processed {len(query_results)} query results.")
+            
             return QueryResult(query=query.query, results=query_results)
     
         return await asyncio.gather(*[_single_query(query) for query in queries])
@@ -322,7 +325,7 @@ class WeaviateDataStore(DataStore):
                     
             relationships = DocumentRelationship(from_documents=from_documents, to_documents=to_documents)
             
-            return DocumentChunkWithScore(
+            doc_chunk = DocumentChunkWithScore(
                 text=resp["text"],
                 score=resp["_additional"]["score"],
                 metadata=DocumentChunkMetadata(
@@ -335,6 +338,8 @@ class WeaviateDataStore(DataStore):
                 ),
                 relationships=relationships
             )
+            
+            logger.info(f"doc_chunk={doc_chunk}")
         
         except Exception as e:
             logger.error(f"Failed to process document chunk {resp}: {e}", exc_info=True)
