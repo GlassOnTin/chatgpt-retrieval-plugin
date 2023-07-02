@@ -267,12 +267,15 @@ class WeaviateDataStore(DataStore):
         return await asyncio.gather(*[_single_query(query) for query in queries])
     
     
-    async def _execute_query(self, query: QueryWithEmbedding):
+    def _execute_query(self, query: QueryWithEmbedding):
         filters_ = WeaviateDataStore.build_filters(query.filter) if hasattr(query, "filter") and query.filter else None
+        
         query_builder = self.client.query.get(WEAVIATE_CLASS, self._get_fields()).with_hybrid(query=query.query, alpha=0.5, vector=query.embedding).with_limit(query.top_k).with_additional(["id","score","vector"])
+        
         if filters_:
             query_builder = query_builder.with_where(filters_)
-        return await query_builder.do()
+            
+        return query_builder.do()
         
     
     def _get_fields(self):
