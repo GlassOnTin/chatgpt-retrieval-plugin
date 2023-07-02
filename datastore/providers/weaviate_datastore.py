@@ -257,10 +257,6 @@ class WeaviateDataStore(DataStore):
                 logger.error(f"Error executing query: {e}", exc=True)
                 return QueryResult(query=query.query, results=[])
     
-            if "data" not in result:
-                logger.error(f"Query result does not contain 'data': {result}")
-                return QueryResult(query=query.query, results=[])
-    
             query_results = self._process_response(result)
             return QueryResult(query=query.query, results=query_results)
     
@@ -299,7 +295,15 @@ class WeaviateDataStore(DataStore):
     def _process_response(self, result):
         try:
             logger.info(f"_process_response{result}")
-            response = result["data"]["Get"][WEAVIATE_CLASS]
+            
+            if "data" in result and "Get" in result["data"] and WEAVIATE_CLASS in result["data"]["Get"]:
+                response = result["data"]["Get"][WEAVIATE_CLASS]
+                
+            else:
+                logger.error(f"Expected keys not found in result: {result}")
+                return []
+                
+                
             return [self._process_document_chunk(resp) for resp in response]
             
         except Exception as e:
@@ -310,7 +314,7 @@ class WeaviateDataStore(DataStore):
         try:
             from_documents = []
             to_documents = []
-            if resp.get("relationships"):
+            if resp.get("relationships") is not None:
                 for relationship in resp["relationships"]:
                     from_documents.extend([DocumentReference(document_id=ref["document_id"], title=ref["title"], relationship=relationship["relationship_type"]) for ref in relationship.get("from_document", [])])
                     
