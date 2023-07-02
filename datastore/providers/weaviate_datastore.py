@@ -245,27 +245,34 @@ class WeaviateDataStore(DataStore):
             batch.flush()
         return doc_ids
         
+    async def _single_query(query: QueryWithEmbedding) -> QueryResult:
+            
+        try:
+            result = self._execute_query(query)
+            
+        except Exception as e:
+            logger.error(f"Error executing query: {e}", exc=True)
+            return QueryResult(query=query.query, results=[])
 
-    async def _query(self, queries: List[QueryWithEmbedding]) -> List[QueryResult]:
+        query_results = self._process_response(result)
         
-        async def _single_query(query: QueryWithEmbedding) -> QueryResult:
-            
-            try:
-                result = self._execute_query(query)
-                
-            except Exception as e:
-                logger.error(f"Error executing query: {e}", exc=True)
-                return QueryResult(query=query.query, results=[])
-    
-            query_results = self._process_response(result)
-            
-            logger.info(f"Processed {len(query_results)} query results.")
-            
-            return QueryResult(query=query.query, results=query_results)
+        logger.info(f"Processed {len(query_results)} query results.")
+        
+        return QueryResult(query=query.query, results=query_results)
+
+    async def _query_async(self, queries: List[QueryWithEmbedding]) -> List[QueryResult]:
     
         return await asyncio.gather(*[_single_query(query) for query in queries])
     
     
+    async def _query(self, queries: List[QueryWithEmbedding]) -> List[QueryResult]:
+        results = []
+        for query in queries:
+            result = await _single_query(query)
+            results.append(result)
+            
+        return results
+
     def _execute_query(self, query: QueryWithEmbedding):
         try:
             filters_ = WeaviateDataStore.build_filters(query.filter) if hasattr(query, "filter") and query.filter else None
@@ -300,19 +307,7 @@ class WeaviateDataStore(DataStore):
             logger.info(f"_process_response{result}")
             
             if "data" in result and "Get" in result["data"] and WEAVIATE_CLASS in result["data"]["Get"]:
-                
-                print ("d:")
-                d = result['data']
-                print(d)
-                
-                print("g:")
-                g = d['Get']
-                print(g)
-                
-                print("response:")
-                response = g[WEAVIATE_CLASS]
-                print(response)
-                print("========")
+                response = result["data"]["Get"][WEAVIATE_CLASS]
                 
             else:
                 logger.error(f"Expected keys not found in result: {result}")
