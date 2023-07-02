@@ -307,8 +307,9 @@ class WeaviateDataStore(DataStore):
             logger.info(f"_process_response{result}")
             
             if "data" in result and "Get" in result["data"] and WEAVIATE_CLASS in result["data"]["Get"]:
+                logger.info("Here!")
                 response = result["data"]["Get"][WEAVIATE_CLASS]
-                
+                logger.info("Now!")
             else:
                 logger.error(f"Expected keys not found in result: {result}")
                 return []
@@ -317,7 +318,7 @@ class WeaviateDataStore(DataStore):
             
         except Exception as e:
             logger.error(f"Failed to process response {result}: {e}", exc_info=True)
-            raise
+            return []
         
     def _process_document_chunk(self, resp):
         try:
