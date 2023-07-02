@@ -247,9 +247,12 @@ class WeaviateDataStore(DataStore):
         
 
     async def _query(self, queries: List[QueryWithEmbedding]) -> List[QueryResult]:
+        
         async def _single_query(query: QueryWithEmbedding) -> QueryResult:
+            
             try:
                 result = self._execute_query(query)
+                
             except Exception as e:
                 logger.error(f"Error executing query: {e}", exc=True)
                 return QueryResult(query=query.query, results=[])
@@ -302,8 +305,11 @@ class WeaviateDataStore(DataStore):
         if resp.get("relationships"):
             for relationship in resp["relationships"]:
                 from_documents.extend([DocumentReference(document_id=ref["document_id"], title=ref["title"], relationship=relationship["relationship_type"]) for ref in relationship.get("from_document", [])])
+                
                 to_documents.extend([DocumentReference(document_id=ref["document_id"], title=ref["title"], relationship=relationship["relationship_type"]) for ref in relationship.get("to_document", [])])
+                
         relationships = DocumentRelationship(from_documents=from_documents, to_documents=to_documents)
+        
         return DocumentChunkWithScore(
             text=resp["text"],
             score=resp["_additional"]["score"],
