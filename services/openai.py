@@ -22,7 +22,7 @@ def get_embeddings(texts: List[str]) -> List[List[float]]:
             else:
                 embeddings.append([0.0] * EMBEDDING_SIZE)
         return embeddings
-    except Exception, e:
+    except Exception as e:
         logger.error("Failed to get embeddings: {e}", exc_info=True)
         raise e
 
