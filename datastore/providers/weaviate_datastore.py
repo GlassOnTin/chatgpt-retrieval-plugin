@@ -300,7 +300,19 @@ class WeaviateDataStore(DataStore):
             logger.info(f"_process_response{result}")
             
             if "data" in result and "Get" in result["data"] and WEAVIATE_CLASS in result["data"]["Get"]:
-                response = result["data"]["Get"][WEAVIATE_CLASS]
+                
+                print ("d:")
+                d = result['data']
+                print(d)
+                
+                print("g:")
+                g = d['Get']
+                print(g)
+                
+                print("response:")
+                response = g[WEAVIATE_CLASS]
+                print(response)
+                print("========")
                 
             else:
                 logger.error(f"Expected keys not found in result: {result}")
