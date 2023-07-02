@@ -9,18 +9,22 @@ EMBEDDING_SIZE = 1536
 
 @retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(3))
 def get_embeddings(texts: List[str]) -> List[List[float]]:
-    embeddings = []
-    for text in texts:
-        if text.strip():
-            response = openai.Embedding.create(input=[text], model=EMBEDDING_MODEL)
-            if 'data' in response:
-                embeddings.append(response['data'][0]['embedding'])
+    try:
+        embeddings = []
+        for text in texts:
+            if text.strip():
+                response = openai.Embedding.create(input=[text], model=EMBEDDING_MODEL)
+                if 'data' in response:
+                    embeddings.append(response['data'][0]['embedding'])
+                else:
+                    logger.error(f"OpenAI API response does not contain 'data': {response}")
+                    embeddings.append([0.0] * EMBEDDING_SIZE)
             else:
-                logger.error(f"OpenAI API response does not contain 'data': {response}")
                 embeddings.append([0.0] * EMBEDDING_SIZE)
-        else:
-            embeddings.append([0.0] * EMBEDDING_SIZE)
-    return embeddings
+        return embeddings
+    except Exception, e:
+        logger.error("Failed to get embeddings: {e}", exc_info=True)
+        raise e
 
 @retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(3))
 def get_chat_completion(
