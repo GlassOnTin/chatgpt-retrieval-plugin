@@ -245,7 +245,7 @@ class WeaviateDataStore(DataStore):
             batch.flush()
         return doc_ids
         
-    async def _single_query(query: QueryWithEmbedding) -> QueryResult:
+    async def _single_query(self, query: QueryWithEmbedding) -> QueryResult:
             
         try:
             result = self._execute_query(query)
@@ -262,13 +262,13 @@ class WeaviateDataStore(DataStore):
 
     async def _query_async(self, queries: List[QueryWithEmbedding]) -> List[QueryResult]:
     
-        return await asyncio.gather(*[_single_query(query) for query in queries])
+        return await asyncio.gather(*[self._single_query(query) for query in queries])
     
     
     async def _query(self, queries: List[QueryWithEmbedding]) -> List[QueryResult]:
         results = []
         for query in queries:
-            result = await _single_query(query)
+            result = await self._single_query(query)
             results.append(result)
             
         return results
