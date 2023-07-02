@@ -303,7 +303,6 @@ class WeaviateDataStore(DataStore):
                 logger.error(f"Expected keys not found in result: {result}")
                 return []
                 
-                
             return [self._process_document_chunk(resp) for resp in response]
             
         except Exception as e:
@@ -312,6 +311,8 @@ class WeaviateDataStore(DataStore):
     
     def _process_document_chunk(self, resp):
         try:
+            logger.info(f"_process_document_chunk{resp}")
+            
             from_documents = []
             to_documents = []
             if resp.get("relationships") is not None:
