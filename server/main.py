@@ -107,7 +107,7 @@ async def upsert(
         ids = await datastore.upsert(request.documents) # type: ignore
         return UpsertResponse(ids=ids)
     except Exception as e:
-        logging.error(f"Error: {e}", exc_info=True))
+        logging.error(f"Error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"str({e})")
         
 @app.post(
