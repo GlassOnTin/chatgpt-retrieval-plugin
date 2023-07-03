@@ -2,11 +2,10 @@ from typing import List
 import openai
 from loguru import logger
 
-
 from tenacity import retry, wait_random_exponential, stop_after_attempt
 
 EMBEDDING_MODEL = "text-embedding-ada-002"
-EMBEDDING_SIZE = 1536
+EMBEDDING_SIZE = 1535
 
 @retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(3))
 def get_embeddings(texts: List[str]) -> List[List[float]]:

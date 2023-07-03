@@ -1,4 +1,3 @@
-# TODO
 import asyncio
 import datetime
 from typing import Dict, List, Optional
@@ -263,16 +262,17 @@ class WeaviateDataStore(DataStore):
             
         try:
             result = self._execute_query(query)
+                
+            query_results = self._process_response(result)
             
+            logger.info(f"Processed {len(query_results)} query results.")
+            
+            return QueryResult(query=query.query, results=query_results)
+        
         except Exception as e:
-            logger.error(f"Error executing query: {e}", exc=True)
+            logger.error(f"Error with query {query}\n{e}", exc=True)
             return QueryResult(query=query.query, results=[])
 
-        query_results = self._process_response(result)
-        
-        logger.info(f"Processed {len(query_results)} query results.")
-        
-        return QueryResult(query=query.query, results=query_results)
 
     def _execute_query(self, query: QueryWithEmbedding):
         try:
@@ -286,7 +286,7 @@ class WeaviateDataStore(DataStore):
             return query_builder.do()
             
         except Exception as e:
-            logger.error(f"Failed to execute_query {result}: {e}", exc_info=True)
+            logger.error(f"Failed to execute_query {query}: {e}", exc_info=True)
             raise
         
     
