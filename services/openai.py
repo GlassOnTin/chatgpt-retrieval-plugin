@@ -1,5 +1,6 @@
 from typing import List
 import openai
+from loguru import logger
 
 
 from tenacity import retry, wait_random_exponential, stop_after_attempt
