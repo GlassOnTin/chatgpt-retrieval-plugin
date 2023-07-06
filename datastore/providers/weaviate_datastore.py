@@ -337,11 +337,21 @@ class WeaviateDataStore(DataStore):
             to_documents = []
             if resp.get("relationships") is not None:
                 for relationship in resp["relationships"]:
-                    from_documents.extend([DocumentReference(document_id=ref["document_id"], title=ref["title"], relationship=relationship["relationship_type"]) for ref in relationship.get("from_document", []) if relationship.get("from_document")])
-                    to_documents.extend([DocumentReference(document_id=ref["document_id"], title=ref["title"], relationship=relationship["relationship_type"]) for ref in relationship.get("to_document", []) if relationship.get("to_document")])
+                    from_doc = relationship.get("from_document")
+                    to_doc = relationship.get("to_document")
                     
-            relationships = DocumentRelationship(from_documents=from_documents, to_documents=to_documents)
+                    if from_doc is not None:
+                        for ref in from_doc:
+                            doc_ref = DocumentReference(document_id=ref["document_id"], title=ref["title"], relationship=relationship["relationship_type"])
+                            from_documents.append(doc_ref)
+                    
+                    if to_doc is not None:
+                        for ref in to_doc:
+                            doc_ref = DocumentReference(document_id=ref["document_id"], title=ref["title"], relationship=relationship["relationship_type"])
+                            to_documents.append(doc_ref)
             
+            relationships = DocumentRelationship(from_documents=from_documents, to_documents=to_documents)
+                    
             doc_chunk = DocumentChunkWithScore(
                 text=resp["text"],
                 score=resp["_additional"]["score"],
