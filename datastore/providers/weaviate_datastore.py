@@ -260,7 +260,7 @@ class WeaviateDataStore(DataStore):
         
         except Exception as e:
             logger.error(f"Error with query: {e}", exc=True)
-            return [QueryResult(query=query.query, results=[])]
+            raise
 
 
     async def _single_query(self, query: QueryWithEmbedding) -> QueryResult:
@@ -276,7 +276,7 @@ class WeaviateDataStore(DataStore):
         
         except Exception as e:
             logger.error(f"Error with _single_query: {e}", exc=True)
-            return QueryResult(query=query.query, results=[])
+            raise
 
 
     def _execute_query(self, query: QueryWithEmbedding):
@@ -314,20 +314,20 @@ class WeaviateDataStore(DataStore):
             logger.info(f"_process_response{result}")
             
             if "data" in result and "Get" in result["data"] and WEAVIATE_CLASS in result["data"]["Get"]:
-                
-                logger.info("Here!")
                 response = result["data"]["Get"][WEAVIATE_CLASS]
-                logger.info("Now!")
-                
+                if response is None:
+                    logger.error(f"Response is None: {result}")
+                    return []
+                else:
+                    return [self._process_document_chunk(resp) for resp in response]
             else:
                 logger.error(f"Expected keys not found in result: {result}")
                 return []
                 
-            return [self._process_document_chunk(resp) for resp in response]
-            
         except Exception as e:
             logger.error(f"Failed to process response: {e}", exc_info=True)
             raise
+
         
     def _process_document_chunk(self, resp):
         try:
