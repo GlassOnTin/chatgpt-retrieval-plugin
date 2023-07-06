@@ -250,12 +250,17 @@ class WeaviateDataStore(DataStore):
     
     
     async def _query(self, queries: List[QueryWithEmbedding]) -> List[QueryResult]:
-        results = []
-        for query in queries:
-            result = await self._single_query(query)
-            results.append(result)
-            
-        return results
+        try:            
+            results = []
+            for query in queries:
+                result = await self._single_query(query)
+                results.append(result)
+                
+            return results
+        
+        except Exception as e:
+            logger.error(f"Error with query {query}: {e}", exc=True)
+            return [QueryResult(query=query.query, results=[])]
 
 
     async def _single_query(self, query: QueryWithEmbedding) -> QueryResult:
@@ -270,7 +275,7 @@ class WeaviateDataStore(DataStore):
             return QueryResult(query=query.query, results=query_results)
         
         except Exception as e:
-            logger.error(f"Error with query {query}\n{e}", exc=True)
+            logger.error(f"Error with _single_query {query}: {e}", exc=True)
             return QueryResult(query=query.query, results=[])
 
 
@@ -321,7 +326,7 @@ class WeaviateDataStore(DataStore):
             return [self._process_document_chunk(resp) for resp in response]
             
         except Exception as e:
-            logger.error(f"Failed to process response {result}: {e}", exc_info=True)
+            logger.error(f"Failed to process response: {e}", exc_info=True)
             raise
         
     def _process_document_chunk(self, resp):
@@ -354,7 +359,7 @@ class WeaviateDataStore(DataStore):
             logger.debug(f"doc_chunk={doc_chunk}")
         
         except Exception as e:
-            logger.error(f"Failed to process document chunk {resp}: {e}", exc_info=True)
+            logger.error(f"Failed to process document chunk: {e}", exc_info=True)
             raise
 
     async def delete(
