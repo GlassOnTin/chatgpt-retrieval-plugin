@@ -308,7 +308,7 @@ class WeaviateDataStore(DataStore):
             "status",
             "relationships { ... on " + WEAVIATE_RELATIONSHIP_CLASS + " { relationship_type, from_document { ... on " + WEAVIATE_CLASS + " { document_id, title } }, to_document { ... on " + WEAVIATE_CLASS + " { document_id, title } } } }"
         ]
-    
+        
     def _process_response(self, result):
         try:
             logger.info(f"_process_response{result}")
@@ -319,7 +319,7 @@ class WeaviateDataStore(DataStore):
                     logger.error(f"Response is None: {result}")
                     return []
                 else:
-                    return [self._process_document_chunk(resp) for resp in response]
+                    return [self._process_document_chunk(resp) for resp in response if resp is not None]
             else:
                 logger.error(f"Expected keys not found in result: {result}")
                 return []
@@ -327,7 +327,6 @@ class WeaviateDataStore(DataStore):
         except Exception as e:
             logger.error(f"Failed to process response: {e}", exc_info=True)
             raise
-
         
     def _process_document_chunk(self, resp):
         try:
