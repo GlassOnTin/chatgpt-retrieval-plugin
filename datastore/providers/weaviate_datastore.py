@@ -342,14 +342,16 @@ class WeaviateDataStore(DataStore):
                     
                     if from_doc is not None:
                         for ref in from_doc:
-                            doc_ref = DocumentReference(document_id=ref["document_id"], title=ref["title"], relationship=relationship["relationship_type"])
-                            from_documents.append(doc_ref)
+                            if ref is not None:
+                                doc_ref = DocumentReference(document_id=ref["document_id"], title=ref["title"], relationship=relationship["relationship_type"])
+                                from_documents.append(doc_ref)
                     
                     if to_doc is not None:
                         for ref in to_doc:
-                            doc_ref = DocumentReference(document_id=ref["document_id"], title=ref["title"], relationship=relationship["relationship_type"])
-                            to_documents.append(doc_ref)
-            
+                            if ref is not None:
+                                doc_ref = DocumentReference(document_id=ref["document_id"], title=ref["title"], relationship=relationship["relationship_type"])
+                                to_documents.append(doc_ref)
+
             relationships = DocumentRelationship(from_documents=from_documents, to_documents=to_documents)
                     
             doc_chunk = DocumentChunkWithScore(
