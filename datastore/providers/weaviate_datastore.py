@@ -259,7 +259,7 @@ class WeaviateDataStore(DataStore):
             return results
         
         except Exception as e:
-            logger.error(f"Error with query {query}: {e}", exc=True)
+            logger.error(f"Error with query: {e}", exc=True)
             return [QueryResult(query=query.query, results=[])]
 
 
@@ -275,7 +275,7 @@ class WeaviateDataStore(DataStore):
             return QueryResult(query=query.query, results=query_results)
         
         except Exception as e:
-            logger.error(f"Error with _single_query {query}: {e}", exc=True)
+            logger.error(f"Error with _single_query: {e}", exc=True)
             return QueryResult(query=query.query, results=[])
 
 
