@@ -10,19 +10,22 @@ class DocumentMetadata(BaseModel):
     status: Optional[str] = None
 
 class DocumentReference(BaseModel):
-    document_id: str
-    title: str
-    relationship: str
+    document_id: Optional[str] = None
+    title: Optional[str] = None
+    relationship: Optional[str] = None
 
 
 class DocumentRelationship(BaseModel):
-    from_documents: Optional[List[DocumentReference]] = None
-    to_documents: Optional[List[DocumentReference]] = None
+    from_documents: List[DocumentReference]
+    to_documents: List[DocumentReference]
 
+    def __init__(self, **data):
+        super().__init__(from_documents=data.get('from_documents', []), to_documents=data.get('to_documents', []), **data)
 
 class DocumentChunkMetadata(DocumentMetadata):
     document_id: Optional[str] = None
-    index: Optional[int] = 0
+    index: Optional[int] = None  # changed from 0 to None
+
 
 class DocumentChunkMetadataFilter(DocumentChunkMetadata):
     start_date: Optional[str] = None  # any date string format
@@ -31,7 +34,7 @@ class DocumentChunkMetadataFilter(DocumentChunkMetadata):
 class DocumentChunk(BaseModel):
     text: str
     metadata: DocumentChunkMetadata
-    relationships: Optional[DocumentRelationship] = None
+    relationships: Optional[DocumentRelationship] = []
     embedding: Optional[List[float]] = None
 
 class DocumentChunkWithScore(DocumentChunk):
@@ -40,12 +43,17 @@ class DocumentChunkWithScore(DocumentChunk):
 
 class Document(BaseModel):
     id: Optional[str] = None
-    text: str
+    text: Optional[str] = None
     metadata: Optional[DocumentMetadata] = None
 
 
+class DocumentChunkMetadata(DocumentMetadata):
+    document_id: Optional[str] = None
+    index: Optional[int] = None
+    
 class DocumentWithChunks(Document):
-    chunks: List[DocumentChunk]
+    chunks: Optional[List[DocumentChunk]] = []
+    
 
 class Query(BaseModel):
     query: str
@@ -56,7 +64,6 @@ class Query(BaseModel):
 class QueryWithEmbedding(Query):
     embedding: List[float]
 
-
 class QueryResult(BaseModel):
     query: str
-    results: List[DocumentChunkWithScore]
+    results: Optional[List[Optional[DocumentChunkWithScore]]] = []
