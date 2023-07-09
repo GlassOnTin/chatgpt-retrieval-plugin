@@ -142,6 +142,10 @@ async def query(
 ):
     try:
         results = await datastore.query(request.queries) # type: ignore
+
+        for result in results:
+            logging.info(f"Query result: {result}")
+            
         return QueryResponse(results=results)
     except Exception as e:
         logging.error(f"Error: {e}", exc_info=True)
