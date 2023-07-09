@@ -16,11 +16,8 @@ class DocumentReference(BaseModel):
 
 
 class DocumentRelationship(BaseModel):
-    from_documents: List[DocumentReference]
-    to_documents: List[DocumentReference]
-
-    def __init__(self, **data):
-        super().__init__(from_documents=data.get('from_documents', []), to_documents=data.get('to_documents', []), **data)
+    from_documents: Optional[List[DocumentReference]] = []
+    to_documents: Optional[List[DocumentReference]] = []
 
 class DocumentChunkMetadata(DocumentMetadata):
     document_id: Optional[str] = None
