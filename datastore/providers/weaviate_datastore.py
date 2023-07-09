@@ -216,7 +216,7 @@ class WeaviateDataStore(DataStore):
                     # we generate a uuid regardless of the format of the document_id because
                     # weaviate needs a uuid to store each document chunk and
                     # a document chunk cannot share the same uuid
-                    doc_uuid = generate_uuid5(doc_chunk, WEAVIATE_CLASS)
+                    chunk_uuid = generate_uuid5(doc_chunk, WEAVIATE_CLASS)
                     metadata = doc_chunk.metadata
                     doc_chunk_dict = doc_chunk.dict()
                     doc_chunk_dict.pop("metadata")
@@ -234,7 +234,7 @@ class WeaviateDataStore(DataStore):
                     embedding = doc_chunk_dict.pop("embedding")
 
                     batch.add_data_object(
-                        uuid=doc_uuid,
+                        uuid=chunk_uuid,
                         data_object=doc_chunk_dict,
                         class_name=WEAVIATE_CLASS,
                         vector=embedding,
@@ -362,6 +362,16 @@ class WeaviateDataStore(DataStore):
             created_at = resp["created_at"] if resp.get("created_at") else ""
             status = resp["status"] if resp.get("status") else ""
     
+            # Add default values if any of the values are None
+            text = text if text is not None else ""
+            score = score if score is not None else 0.0
+            document_id = document_id if document_id is not None else ""
+            title = title if title is not None else ""
+            type_ = type_ if type_ is not None else ""
+            source = source if source is not None else ""
+            created_at = created_at if created_at is not None else ""
+            status = status if status is not None else ""
+    
             doc_chunk = DocumentChunkWithScore(
                 text=text,
                 score=score,
@@ -381,6 +391,7 @@ class WeaviateDataStore(DataStore):
         except Exception as e:
             logger.error(f"Failed to process document chunk: {e}", exc_info=True)
             raise
+    
             
 
     async def delete(
