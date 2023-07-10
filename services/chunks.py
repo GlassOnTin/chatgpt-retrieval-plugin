@@ -1,5 +1,6 @@
 from typing import Dict, List, Optional, Tuple
 import uuid
+from loguru import logger
 from models.models import Document, DocumentChunk, DocumentChunkMetadata
 
 import tiktoken
@@ -132,6 +133,7 @@ def create_document_chunks(
 
     # Split the document text into chunks
     text_chunks = get_text_chunks(doc.text, chunk_token_size)
+    logger.info(f"text_chunks: {text_chunks}")
 
     # Initialize an empty list of chunks for this document
     doc_chunks = []
@@ -139,10 +141,9 @@ def create_document_chunks(
     # Assign each chunk a sequential number and create a DocumentChunk object
     for i, text_chunk in enumerate(text_chunks):
         metadata.index = i
-        chunk_id = f"{doc_id}_{i}"
         doc_chunk = DocumentChunk(
             text=text_chunk,
-            metadata=metadata,
+            metadata=metadata
         )
         # Append the chunk object to the list of chunks for this document
         doc_chunks.append(doc_chunk)
