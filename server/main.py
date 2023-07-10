@@ -4,8 +4,9 @@
 # and want to access the openapi.json when you run the app locally at http://0.0.0.0:8000/sub/openapi.json.
 import os
 from typing import Optional
+import yaml
 import uvicorn
-from fastapi import FastAPI, File, Form, HTTPException, Depends, Body, UploadFile
+from fastapi import FastAPI, APIRouter, File, Form, HTTPException, Depends, Body, Response, Request, UploadFile
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.staticfiles import StaticFiles
 
@@ -40,7 +41,7 @@ def validate_token(credentials: HTTPAuthorizationCredentials = Depends(bearer_sc
 app = FastAPI()
 app.mount("/.well-known", StaticFiles(directory=".well-known"), name="static")
 
-# Create a sub-application, in order to access just the upsert and query endpoints in the OpenAPI schema, found at http://0.0.0.0:8000/sub/openapi.json when the app is running locally
+# Create a sub-application, in order to access a subset of the endpoints in the OpenAPI schema, found at http://0.0.0.0:8000/sub/openapi.json when the app is running locally
 sub_app = FastAPI(
     title="Retrieval Plugin API",
     description="A retrieval API for querying and filtering documents based on natural language queries and metadata",
@@ -48,8 +49,14 @@ sub_app = FastAPI(
     servers=[{"url": "https://your-app-url.com"}],
     dependencies=[Depends(validate_token)],
 )
-app.mount("/sub", sub_app)
 
+# Create a router for the endpoints that should be in both the main app and the sub app
+common_router = APIRouter()
+
+# Include the common router in the both main and sub app
+app.include_router(common_router)
+sub_app.include_router(common_router)
+app.mount("/sub", sub_app)
 
 @app.post(
     "/upsert-file",
@@ -77,24 +84,7 @@ async def upsert_file(
         logger.error(f"Error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"str({e})")
 
-
-@app.post(
-    "/upsert",
-    response_model=UpsertResponse,
-)
-async def upsert_main(
-    request: UpsertRequest = Body(...),
-    token: HTTPAuthorizationCredentials = Depends(validate_token),
-):
-    try:
-        ids = await datastore.upsert(request.documents) # type: ignore
-        return UpsertResponse(ids=ids)
-    except Exception as e:
-        logger.error(f"Error: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"str({e})")
-
-
-@sub_app.post(
+@common_router.post(
     "/upsert",
     response_model=UpsertResponse,
     description="Save chat information. Accepts an array of documents with text and metadata (no ID required as this will be generated).",
@@ -110,24 +100,7 @@ async def upsert(
         logger.error(f"Error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"str({e})")
         
-@app.post(
-    "/query",
-    response_model=QueryResponse,
-)
-async def query_main(
-    request: QueryRequest = Body(...),
-    token: HTTPAuthorizationCredentials = Depends(validate_token),
-):
-    try:
-        results = await datastore.query(request.queries) # type: ignore
-
-        return QueryResponse(results=results)
-    except Exception as e:
-        logger.error(f"Error: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
-        
-
-@sub_app.post(
+@common_router.post(
     "/query",
     response_model=QueryResponse,
     # NOTE: We are describing the shape of the API endpoint input due to a current limitation in parsing arrays of objects from OpenAPI schemas. This will not be necessary in the future.
@@ -145,7 +118,7 @@ async def query(
         logger.error(f"Error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"str({e})")
 
-@sub_app.post(
+@common_router.post(
     "/delete",
     response_model=DeleteResponse
 )
@@ -169,7 +142,7 @@ async def delete(
         logger.error(f"Error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"str({e})")
 
-@sub_app.post(
+@common_router.post(
     "/add_reference",
     response_model=ReferenceResponse,
     description="Adds a reference between two documents.",
@@ -190,7 +163,7 @@ async def add_reference(
         logger.error(f"Error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"str({e})")
     
-@sub_app.post(
+@common_router.post(
     "/delete_reference",
     response_model=ReferenceResponse,
     description="Deletes a reference between two documents.",
@@ -209,8 +182,21 @@ async def delete_reference(
         logger.error(f"Error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"str({e})")
 
+@common_router.get("/openapi.yaml", include_in_schema=False)
+async def get_openapi_yaml(request: Request):
+    # An endpoint for the openapi.yaml
+    openapi_schema = request.app.openapi()
+    openapi_yaml = yaml.safe_dump(openapi_schema)
+    return Response(content=openapi_yaml, media_type="application/x-yaml")
+
 @app.on_event("startup")
 async def startup():
+    # Generate the OpenAPI schema for the sub app and save it to a file
+    openapi_schema = sub_app.openapi()
+    openapi_yaml = yaml.safe_dump(openapi_schema)
+    with open(".well-known/openapi.yaml", "w") as file:
+        file.write(openapi_yaml)
+
     global datastore
     datastore = await get_datastore()
 
