@@ -249,12 +249,12 @@ class WeaviateDataStore(DataStore):
             logger.error(f"Error with upsert: {e}", exc=True)
             raise
         
-    async def _query_async(self, queries: List[QueryWithEmbedding]) -> List[QueryResult]:
+    async def _query(self, queries: List[QueryWithEmbedding]) -> List[QueryResult]:
     
         return await asyncio.gather(*[self._single_query(query) for query in queries])
     
     
-    async def _query(self, queries: List[QueryWithEmbedding]) -> List[QueryResult]:
+    async def _query_seq(self, queries: List[QueryWithEmbedding]) -> List[QueryResult]:
         try:            
             results = []
             for query in queries:
