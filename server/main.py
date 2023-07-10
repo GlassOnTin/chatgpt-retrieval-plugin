@@ -40,7 +40,6 @@ def validate_token(credentials: HTTPAuthorizationCredentials = Depends(bearer_sc
 
 
 app = FastAPI()
-app.mount("/.well-known", StaticFiles(directory=".well-known"), name="static")
 
 # Create a sub-application, in order to access a subset of the endpoints in the OpenAPI schema, found at http://0.0.0.0:8000/sub/openapi.json when the app is running locally
 sub_app = FastAPI(
@@ -53,13 +52,10 @@ sub_app = FastAPI(
 
 # Create a router for the endpoints that should be in both the main app and the sub app
 common_router = APIRouter()
+app_router = APIRouter()
+sub_app_router = APIRouter()
 
-# Include the common router in the both main and sub app
-app.include_router(common_router)
-sub_app.include_router(common_router)
-app.mount("/sub", sub_app)
-
-@app.post(
+@app_router.post(
     "/upsert-file",
     response_model=UpsertResponse,
 )
@@ -207,6 +203,14 @@ async def startup():
     global datastore
     datastore = await get_datastore()
 
+# Include the common router in the both main and sub app
+app.include_router(common_router)
+app.include_router(app_router)
+sub_app.include_router(common_router)
+sub_app.include_router(sub_app_router)
+
+app.mount("/.well-known", StaticFiles(directory=".well-known"), name="static")
+app.mount("/sub", sub_app)
 
 def start():
     uvicorn.run("server.main:app", host="0.0.0.0", port=8000, reload=True)
