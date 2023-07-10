@@ -52,10 +52,8 @@ sub_app = FastAPI(
 
 # Create a router for the endpoints that should be in both the main app and the sub app
 common_router = APIRouter()
-app_router = APIRouter()
-sub_app_router = APIRouter()
 
-@app_router.post(
+@app.post(
     "/upsert-file",
     response_model=UpsertResponse,
 )
@@ -186,6 +184,12 @@ async def get_openapi_yaml(request: Request):
     openapi_yaml = yaml.safe_dump(openapi_schema)
     return Response(content=openapi_yaml, media_type="application/x-yaml")
 
+@sub_app.get("/openapi.yaml", include_in_schema=False)
+async def get_sub_openapi_yaml():
+    openapi_schema = sub_app.openapi()
+    openapi_yaml = yaml.safe_dump(openapi_schema)
+    return Response(content=openapi_yaml, media_type="application/x-yaml")
+
 # Add a default representer
 def default_representer(dumper, data):
     return dumper.represent_str(str(data))
@@ -205,11 +209,8 @@ async def startup():
 
 # Include the common router in the both main and sub app
 app.include_router(common_router)
-app.include_router(app_router)
 sub_app.include_router(common_router)
-sub_app.include_router(sub_app_router)
 
-app.mount("/.well-known", StaticFiles(directory=".well-known"), name="static")
 app.mount("/sub", sub_app)
 
 def start():
