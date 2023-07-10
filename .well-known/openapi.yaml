@@ -1,35 +1,21 @@
 openapi: 3.0.2
 info:
-  title: FastAPI
-  version: 0.1.0
+  title: Retrieval Plugin API
+  description: >-
+    A retrieval API for querying and filtering documents based on natural
+    language queries and metadata
+  version: 1.0.0
+servers:
+  - url: /sub
+  - url: https://retrieval-plugin-server-se2t.onrender.com
 paths:
-  /upsert-file:
-    post:
-      summary: Upsert File
-      operationId: upsert_file_upsert_file_post
-      requestBody:
-        content:
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/Body_upsert_file_upsert_file_post'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UpsertResponse'
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
   /upsert:
     post:
-      summary: Upsert Main
-      operationId: upsert_main_upsert_post
+      summary: Upsert
+      description: >-
+        Save chat information. Accepts an array of documents with text and
+        metadata (no ID required as this will be generated).
+      operationId: upsert_upsert_post
       requestBody:
         content:
           application/json:
@@ -53,8 +39,13 @@ paths:
         - HTTPBearer: []
   /query:
     post:
-      summary: Query Main
-      operationId: query_main_query_post
+      summary: Query
+      description: >-
+        Accepts search query objects array each with query and optional filter.
+        Break down complex questions into sub-questions. Refine results by
+        criteria, e.g. time, don't do this often. Split queries if
+        ResponseTooLargeError occurs.
+      operationId: query_query_post
       requestBody:
         content:
           application/json:
@@ -76,156 +67,8 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
       security:
         - HTTPBearer: []
-  /delete:
-    post:
-      summary: Delete
-      operationId: delete_delete_post
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/DeleteRequest'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DeleteResponse'
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-      security:
-        - HTTPBearer: []
-  /add_reference:
-    post:
-      summary: Add Reference
-      description: Adds a reference between two documents.
-      operationId: add_reference_add_reference_post
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AddReferenceRequest'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReferenceResponse'
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-      security:
-        - HTTPBearer: []
-  /delete_reference:
-    post:
-      summary: Delete Reference
-      description: Deletes a reference between two documents.
-      operationId: delete_reference_delete_reference_post
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/DeleteReferenceRequest'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReferenceResponse'
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-      security:
-        - HTTPBearer: []
 components:
   schemas:
-    AddReferenceRequest:
-      title: AddReferenceRequest
-      required:
-        - from_id
-        - to_id
-        - from_relationship_type
-        - to_relationship_type
-      type: object
-      properties:
-        from_id:
-          title: From Id
-          type: string
-        to_id:
-          title: To Id
-          type: string
-        from_relationship_type:
-          title: From Relationship Type
-          type: string
-        to_relationship_type:
-          title: To Relationship Type
-          type: string
-    Body_upsert_file_upsert_file_post:
-      title: Body_upsert_file_upsert_file_post
-      required:
-        - file
-      type: object
-      properties:
-        file:
-          title: File
-          type: string
-          format: binary
-        metadata:
-          title: Metadata
-          type: string
-    DeleteReferenceRequest:
-      title: DeleteReferenceRequest
-      required:
-        - from_id
-        - to_id
-      type: object
-      properties:
-        from_id:
-          title: From Id
-          type: string
-        to_id:
-          title: To Id
-          type: string
-    DeleteRequest:
-      title: DeleteRequest
-      type: object
-      properties:
-        ids:
-          title: Ids
-          type: array
-          items:
-            type: string
-        filter:
-          $ref: '#/components/schemas/DocumentChunkMetadataFilter'
-        delete_all:
-          title: Delete All
-          type: boolean
-          default: false
-    DeleteResponse:
-      title: DeleteResponse
-      required:
-        - success
-      type: object
-      properties:
-        success:
-          title: Success
-          type: boolean
     Document:
       title: Document
       type: object
@@ -428,15 +271,6 @@ components:
           items:
             $ref: '#/components/schemas/DocumentChunkWithScore'
           default: []
-    ReferenceResponse:
-      title: ReferenceResponse
-      required:
-        - success
-      type: object
-      properties:
-        success:
-          title: Success
-          type: boolean
     UpsertRequest:
       title: UpsertRequest
       required:
