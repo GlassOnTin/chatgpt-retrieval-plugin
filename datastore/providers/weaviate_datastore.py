@@ -286,9 +286,13 @@ class WeaviateDataStore(DataStore):
 
     def _execute_query(self, query: QueryWithEmbedding):
         try:
-            filters_ = WeaviateDataStore.build_filters(query.filter) if hasattr(query, "filter") and query.filter else None
+            filters_ = self.build_filters(query.filter) if hasattr(query, "filter") and query.filter else None
             
-            query_builder = self.client.query.get(WEAVIATE_CLASS, self._get_fields()).with_hybrid(query=query.query, alpha=0.5, vector=query.embedding).with_limit(query.top_k).with_additional(["id","score"])
+            query_builder = self.client.query\
+                .get(WEAVIATE_CLASS, self._get_fields()) \
+                .with_hybrid(query=query.query, alpha=0.5, vector=query.embedding) \
+                .with_limit(query.top_k) \
+                .with_additional(["id","score"])
             
             if filters_:
                 query_builder = query_builder.with_where(filters_)
