@@ -120,7 +120,6 @@ async def query_main(
 ):
     try:
         results = await datastore.query(request.queries) # type: ignore
-        logger.info(f"Query results: {results}")
 
         return QueryResponse(results=results)
     except Exception as e:
@@ -140,7 +139,6 @@ async def query(
 ):
     try:
         results = await datastore.query(request.queries) # type: ignore
-        logger.info(f"Query results: {results}")
             
         return QueryResponse(results=results)
     except Exception as e:

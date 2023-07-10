@@ -273,7 +273,7 @@ class WeaviateDataStore(DataStore):
                 
             query_results = self._process_response(result)
             
-            logger.info(f"Processed {len(query_results)} query results.")
+            logger.info(f"query_results: {query_results}")
             
             return QueryResult(query=query.query, results=query_results)
         
@@ -395,6 +395,8 @@ class WeaviateDataStore(DataStore):
             )
     
             logger.debug(f"doc_chunk={doc_chunk}")
+
+            return doc_chunk
     
         except Exception as e:
             logger.error(f"Failed to process document chunk: {e}", exc_info=True)
