@@ -47,8 +47,7 @@ to_id = client.data_object.create(
     uuid = doc_id2
 )
 
-data = client.data_object.get()
-print(json.dumps(data, indent=4))
+data = client.data_object.get(); print(json.dumps(data, indent=4))
 
 
 #========= DOCUMENT QUERY =========
