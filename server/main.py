@@ -145,7 +145,7 @@ async def query(
         logger.error(f"Error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"str({e})")
 
-@app.post(
+@sub_app.post(
     "/delete",
     response_model=DeleteResponse
 )
@@ -169,7 +169,7 @@ async def delete(
         logger.error(f"Error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"str({e})")
 
-@app.post(
+@sub_app.post(
     "/add_reference",
     response_model=ReferenceResponse,
     description="Adds a reference between two documents.",
@@ -190,7 +190,7 @@ async def add_reference(
         logger.error(f"Error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"str({e})")
     
-@app.post(
+@sub_app.post(
     "/delete_reference",
     response_model=ReferenceResponse,
     description="Deletes a reference between two documents.",
