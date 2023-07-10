@@ -190,15 +190,16 @@ async def get_openapi_yaml(request: Request):
     openapi_yaml = yaml.safe_dump(openapi_schema)
     return Response(content=openapi_yaml, media_type="application/x-yaml")
 
-# Add a custom representer for AnyUrl
-def anyurl_representer(dumper, data):
+# Add a default representer
+def default_representer(dumper, data):
     return dumper.represent_str(str(data))
+
+yaml.representer.SafeRepresenter.add_representer(None, default_representer)
 
 @app.on_event("startup")
 async def startup():
     # Generate the OpenAPI schema for the sub app and save it to a file
     openapi_schema = sub_app.openapi()
-    yaml.add_representer(AnyUrl, anyurl_representer)
     openapi_yaml = yaml.safe_dump(openapi_schema)
     with open(".well-known/openapi.yaml", "w") as file:
         file.write(openapi_yaml)
