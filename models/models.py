@@ -14,7 +14,6 @@ class DocumentReference(BaseModel):
     title: Optional[str] = None
     relationship: Optional[str] = None
 
-
 class DocumentRelationship(BaseModel):
     from_documents: Optional[List[DocumentReference]] = []
     to_documents: Optional[List[DocumentReference]] = []
@@ -31,7 +30,7 @@ class DocumentChunkMetadataFilter(DocumentChunkMetadata):
 class DocumentChunk(BaseModel):
     text: str
     metadata: DocumentChunkMetadata
-    relationships: Optional[DocumentRelationship] = []
+    relationships: Optional[DocumentRelationship] = None
     embedding: Optional[List[float]] = None
 
 class DocumentChunkWithScore(DocumentChunk):
@@ -43,11 +42,6 @@ class Document(BaseModel):
     text: Optional[str] = None
     metadata: Optional[DocumentMetadata] = None
 
-
-class DocumentChunkMetadata(DocumentMetadata):
-    document_id: Optional[str] = None
-    index: Optional[int] = None
-    
 class DocumentWithChunks(Document):
     chunks: Optional[List[DocumentChunk]] = []
     

@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional
 import asyncio
+from loguru import logger
 
 from models.models import (
     Document,
@@ -23,23 +24,28 @@ class DataStore(ABC):
         First deletes all the existing vectors with the document id (if necessary, depends on the vector db), then inserts the new ones.
         Return a list of document ids.
         """
-        # Delete any existing vectors for documents with the input document ids
-        await asyncio.gather(
-            *[
-                self.delete(
-                    filter=DocumentChunkMetadataFilter(
-                        document_id=document.id,
-                    ),
-                    delete_all=False,
-                )
-                for document in documents
-                if document.id
-            ]
-        )
+        try:            
+            # Delete any existing vectors for documents with the input document ids
+            await asyncio.gather(
+                *[
+                    self.delete(
+                        filter=DocumentChunkMetadataFilter(
+                            document_id=document.id,
+                        ),
+                        delete_all=False,
+                    )
+                    for document in documents
+                    if document.id
+                ]
+            )
 
-        chunks = get_document_chunks(documents, chunk_token_size)
+            chunks = get_document_chunks(documents, chunk_token_size)
 
-        return await self._upsert(chunks)
+            return await self._upsert(chunks)
+        
+        except Exception as e:
+            logger.error(f"Error with upsert: {e}", exc=True)
+            raise
 
     @abstractmethod
     async def _upsert(self, chunks: Dict[str, List[DocumentChunk]]) -> List[str]:
@@ -54,15 +60,20 @@ class DataStore(ABC):
         """
         Takes in a list of queries and filters and returns a list of query results with matching document chunks and scores.
         """
-        # get a list of of just the queries from the Query list
-        query_texts = [query.query for query in queries]
-        query_embeddings = get_embeddings(query_texts)
-        # hydrate the queries with embeddings
-        queries_with_embeddings = [
-            QueryWithEmbedding(**query.dict(), embedding=embedding)
-            for query, embedding in zip(queries, query_embeddings)
-        ]
-        return await self._query(queries_with_embeddings)
+        try:            
+            # get a list of of just the queries from the Query list
+            query_texts = [query.query for query in queries]
+            query_embeddings = get_embeddings(query_texts)
+            # hydrate the queries with embeddings
+            queries_with_embeddings = [
+                QueryWithEmbedding(**query.dict(), embedding=embedding)
+                for query, embedding in zip(queries, query_embeddings)
+            ]
+            return await self._query(queries_with_embeddings)
+                
+        except Exception as e:
+            logger.error(f"Error with upsert: {e}", exc=True)
+            raise
 
     @abstractmethod
     async def _query(self, queries: List[QueryWithEmbedding]) -> List[QueryResult]:

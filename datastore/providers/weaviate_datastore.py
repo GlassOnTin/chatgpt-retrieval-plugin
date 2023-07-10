@@ -207,42 +207,47 @@ class WeaviateDataStore(DataStore):
         Takes in a dict of list of document chunks and inserts them into the database.
         Return a list of document ids.
         """
-        doc_ids = []
+        try:  
+            doc_ids = []
 
-        with self.client.batch as batch:
-            for doc_id, doc_chunks in chunks.items():
-                logger.debug(f"Upserting {doc_id} with {len(doc_chunks)} chunks")
-                for doc_chunk in doc_chunks:
-                    # we generate a uuid regardless of the format of the document_id because
-                    # weaviate needs a uuid to store each document chunk and
-                    # a document chunk cannot share the same uuid
-                    chunk_uuid = generate_uuid5(doc_chunk, WEAVIATE_CLASS)
-                    metadata = doc_chunk.metadata
-                    doc_chunk_dict = doc_chunk.dict()
-                    doc_chunk_dict.pop("metadata")
-                    for key, value in metadata.dict().items():
-                        doc_chunk_dict[key] = value
-                    doc_chunk_dict["relationships"] = (
-                        doc_chunk_dict.pop("relationships").value
-                        if doc_chunk_dict["relationships"]
-                        else None
-                    )
-                    
-                    # Set the 'created_at' field to the current system UTC time
-                    doc_chunk_dict['created_at'] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+            with self.client.batch as batch:
+                for doc_id, doc_chunks in chunks.items():
+                    logger.debug(f"Upserting {doc_id} with {len(doc_chunks)} chunks")
+                    for doc_chunk in doc_chunks:
+                        # we generate a uuid regardless of the format of the document_id because
+                        # weaviate needs a uuid to store each document chunk and
+                        # a document chunk cannot share the same uuid
+                        chunk_uuid = generate_uuid5(doc_chunk, WEAVIATE_CLASS)
+                        metadata = doc_chunk.metadata
+                        doc_chunk_dict = doc_chunk.dict()
+                        doc_chunk_dict.pop("metadata")
+                        for key, value in metadata.dict().items():
+                            doc_chunk_dict[key] = value
+                        doc_chunk_dict["relationships"] = (
+                            doc_chunk_dict.pop("relationships").value
+                            if doc_chunk_dict["relationships"]
+                            else None
+                        )
+                        
+                        # Set the 'created_at' field to the current system UTC time
+                        doc_chunk_dict['created_at'] = datetime.datetime.now(datetime.timezone.utc).isoformat()
 
-                    embedding = doc_chunk_dict.pop("embedding")
+                        embedding = doc_chunk_dict.pop("embedding")
 
-                    batch.add_data_object(
-                        uuid=chunk_uuid,
-                        data_object=doc_chunk_dict,
-                        class_name=WEAVIATE_CLASS,
-                        vector=embedding,
-                    )
+                        batch.add_data_object(
+                            uuid=chunk_uuid,
+                            data_object=doc_chunk_dict,
+                            class_name=WEAVIATE_CLASS,
+                            vector=embedding,
+                        )
 
-                doc_ids.append(doc_id)
-            batch.flush()
-        return doc_ids
+                    doc_ids.append(doc_id)
+                batch.flush()
+            return doc_ids
+        
+        except Exception as e:
+            logger.error(f"Error with upsert: {e}", exc=True)
+            raise
         
     async def _query_async(self, queries: List[QueryWithEmbedding]) -> List[QueryResult]:
     
@@ -350,9 +355,7 @@ class WeaviateDataStore(DataStore):
                             if ref is not None:
                                 doc_ref = DocumentReference(document_id=ref["document_id"], title=ref["title"], relationship=relationship["relationship_type"])
                                 to_documents.append(doc_ref)
-    
-            relationships = DocumentRelationship(from_documents=from_documents, to_documents=to_documents)
-    
+
             text = resp["text"] if resp.get("text") else ""
             score = resp["_additional"]["score"] if resp.get("_additional") and resp["_additional"].get("score") else 0.0
             document_id = resp["document_id"] if resp.get("document_id") else ""
@@ -383,7 +386,10 @@ class WeaviateDataStore(DataStore):
                     created_at=created_at,
                     status=status
                 ),
-                relationships=relationships
+                relationships= DocumentRelationship(
+                    from_documents=from_documents,
+                    to_documents=to_documents
+                )
             )
     
             logger.debug(f"doc_chunk={doc_chunk}")

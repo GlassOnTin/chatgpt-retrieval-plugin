@@ -141,7 +141,6 @@ def create_document_chunks(
         metadata.index = i
         chunk_id = f"{doc_id}_{i}"
         doc_chunk = DocumentChunk(
-            index=i,
             text=text_chunk,
             metadata=metadata,
         )
