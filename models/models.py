@@ -20,7 +20,7 @@ class DocumentRelationship(BaseModel):
 
 class DocumentChunkMetadata(DocumentMetadata):
     document_id: Optional[str] = None
-    index: Optional[int] = None  # changed from 0 to None
+    index: Optional[int] = 0
 
 
 class DocumentChunkMetadataFilter(DocumentChunkMetadata):
