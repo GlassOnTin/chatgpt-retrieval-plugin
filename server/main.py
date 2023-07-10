@@ -24,7 +24,7 @@ from datastore.factory import get_datastore
 from services.file import get_document_from_file
 
 from models.models import DocumentMetadata
-import logging
+from loguru import logger
 
 bearer_scheme = HTTPBearer()
 BEARER_TOKEN = os.environ.get("BEARER_TOKEN")
@@ -74,7 +74,7 @@ async def upsert_file(
         ids = await datastore.upsert([document])    # type: ignore
         return UpsertResponse(ids=ids)
     except Exception as e:
-        logging.error(f"Error: {e}", exc_info=True)
+        logger.error(f"Error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"str({e})")
 
 
@@ -90,7 +90,7 @@ async def upsert_main(
         ids = await datastore.upsert(request.documents) # type: ignore
         return UpsertResponse(ids=ids)
     except Exception as e:
-        logging.error(f"Error: {e}", exc_info=True)
+        logger.error(f"Error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"str({e})")
 
 
@@ -107,7 +107,7 @@ async def upsert(
         ids = await datastore.upsert(request.documents) # type: ignore
         return UpsertResponse(ids=ids)
     except Exception as e:
-        logging.error(f"Error: {e}", exc_info=True)
+        logger.error(f"Error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"str({e})")
         
 @app.post(
@@ -120,11 +120,11 @@ async def query_main(
 ):
     try:
         results = await datastore.query(request.queries) # type: ignore
-        logging.info(f"Query results: {results}")
+        logger.info(f"Query results: {results}")
 
         return QueryResponse(results=results)
     except Exception as e:
-        logging.error(f"Error: {e}", exc_info=True)
+        logger.error(f"Error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
         
 
@@ -140,11 +140,11 @@ async def query(
 ):
     try:
         results = await datastore.query(request.queries) # type: ignore
-        logging.info(f"Query results: {results}")
+        logger.info(f"Query results: {results}")
             
         return QueryResponse(results=results)
     except Exception as e:
-        logging.error(f"Error: {e}", exc_info=True)
+        logger.error(f"Error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"str({e})")
 
 @app.post(
@@ -168,7 +168,7 @@ async def delete(
         )
         return DeleteResponse(success=success)
     except Exception as e:
-        logging.error(f"Error: {e}", exc_info=True)
+        logger.error(f"Error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"str({e})")
 
 @app.post(
@@ -189,7 +189,7 @@ async def add_reference(
         )
         return ReferenceResponse(success=success)
     except Exception as e:
-        logging.error(f"Error: {e}", exc_info=True)
+        logger.error(f"Error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"str({e})")
     
 @app.post(
@@ -208,7 +208,7 @@ async def delete_reference(
         )
         return ReferenceResponse(success=success)
     except Exception as e:
-        logging.error(f"Error: {e}", exc_info=True)
+        logger.error(f"Error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"str({e})")
 
 @app.on_event("startup")
