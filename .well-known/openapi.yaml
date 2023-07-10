@@ -6,7 +6,7 @@ info:
     language queries and metadata
   version: 1.0.0
 servers:
-  - url: https://retrieval-plugin-server-se2t.onrender.com/sub
+  - url: https://retrieval-plugin-server-se2t.onrender.com
 paths:
   /upsert:
     post:
