@@ -12,6 +12,7 @@ class DocumentMetadata(BaseModel):
 class DocumentReference(BaseModel):
     document_id: Optional[str] = None
     title: Optional[str] = None
+    status: Optional[str] = None
     relationship: Optional[str] = None
 
 class DocumentRelationship(BaseModel):

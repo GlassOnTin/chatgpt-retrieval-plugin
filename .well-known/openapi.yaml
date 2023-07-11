@@ -1,150 +1,210 @@
 openapi: 3.0.2
 info:
-  title: Vector Graph Memory Plugin API
-  description: An API for querying and filtering documents based on natural language queries and metadata
+  title: Retrieval Plugin API
+  description: >-
+    A retrieval API for querying and filtering documents based on natural
+    language queries and metadata
   version: 1.0.0
 servers:
-  - url: https://your-app-url.com
+  - url: https://retrieval-plugin-server-se2t.onrender.com
 paths:
   /upsert:
     post:
       summary: Upsert
-      description: Update or Insert chat information into the vector database. Accepts an array of documents with text and metadata.  When updating, provide the document "id" item as well as the "text" and "metadata" keys.
-      operationId: upsert_post
+      description: >-
+        Save chat information. Accepts an array of documents with text and
+        metadata (no ID required as this will be generated).
+      operationId: upsert_upsert_post
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpsertRequest"
+              $ref: '#/components/schemas/UpsertRequest'
         required: true
       responses:
-        "200":
+        '200':
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UpsertResponse"
-        "422":
+                $ref: '#/components/schemas/UpsertResponse'
+        '422':
           description: Validation Error
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/HTTPValidationError"
+                $ref: '#/components/schemas/HTTPValidationError'
       security:
         - HTTPBearer: []
   /query:
     post:
       summary: Query
-      description: Accepts search query objects array each with query and optional filter. Break down complex questions into sub-questions. Refine results by criteria, e.g. time / source, don't do this often. Split queries if ResponseTooLargeError occurs.
-      operationId: query_post
+      description: >-
+        Accepts search query objects array each with query and optional filter.
+        Break down complex questions into sub-questions. Refine results by
+        criteria, e.g. time, don't do this often. Split queries if
+        ResponseTooLargeError occurs.
+      operationId: query_query_post
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/QueryRequest"
+              $ref: '#/components/schemas/QueryRequest'
         required: true
       responses:
-        "200":
+        '200':
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/QueryResponse"
-        "422":
+                $ref: '#/components/schemas/QueryResponse'
+        '422':
           description: Validation Error
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/HTTPValidationError"
+                $ref: '#/components/schemas/HTTPValidationError'
       security:
         - HTTPBearer: []
   /delete:
     post:
       summary: Delete
-      description: Delete documents based on IDs or filter. If delete_all is true, all documents will be deleted.
-      operationId: delete_post
+      operationId: delete_delete_post
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/DeleteRequest"
+              $ref: '#/components/schemas/DeleteRequest'
         required: true
       responses:
-        "200":
+        '200':
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/DeleteResponse"
-        "422":
+                $ref: '#/components/schemas/DeleteResponse'
+        '422':
           description: Validation Error
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/HTTPValidationError"
+                $ref: '#/components/schemas/HTTPValidationError'
       security:
         - HTTPBearer: []
   /add_reference:
     post:
       summary: Add Reference
       description: Adds a reference between two documents.
-      operationId: add_reference_post
+      operationId: add_reference_add_reference_post
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AddReferenceRequest"
+              $ref: '#/components/schemas/AddReferenceRequest'
         required: true
       responses:
-        "200":
+        '200':
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AddReferenceResponse"
-        "422":
+                $ref: '#/components/schemas/ReferenceResponse'
+        '422':
           description: Validation Error
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/HTTPValidationError"
+                $ref: '#/components/schemas/HTTPValidationError'
       security:
         - HTTPBearer: []
-
-
   /delete_reference:
     post:
       summary: Delete Reference
       description: Deletes a reference between two documents.
-      operationId: delete_reference_post
+      operationId: delete_reference_delete_reference_post
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/DeleteReferenceRequest"
+              $ref: '#/components/schemas/DeleteReferenceRequest'
         required: true
       responses:
-        "200":
+        '200':
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/DeleteReferenceResponse"
-        "422":
+                $ref: '#/components/schemas/ReferenceResponse'
+        '422':
           description: Validation Error
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/HTTPValidationError"
+                $ref: '#/components/schemas/HTTPValidationError'
       security:
         - HTTPBearer: []
-
 components:
   schemas:
+    AddReferenceRequest:
+      title: AddReferenceRequest
+      required:
+        - from_id
+        - to_id
+        - from_relationship_type
+        - to_relationship_type
+      type: object
+      properties:
+        from_id:
+          title: From Id
+          type: string
+        to_id:
+          title: To Id
+          type: string
+        from_relationship_type:
+          title: From Relationship Type
+          type: string
+        to_relationship_type:
+          title: To Relationship Type
+          type: string
+    DeleteReferenceRequest:
+      title: DeleteReferenceRequest
+      required:
+        - from_id
+        - to_id
+      type: object
+      properties:
+        from_id:
+          title: From Id
+          type: string
+        to_id:
+          title: To Id
+          type: string
+    DeleteRequest:
+      title: DeleteRequest
+      type: object
+      properties:
+        ids:
+          title: Ids
+          type: array
+          items:
+            type: string
+        filter:
+          $ref: '#/components/schemas/DocumentChunkMetadataFilter'
+        delete_all:
+          title: Delete All
+          type: boolean
+          default: false
+    DeleteResponse:
+      title: DeleteResponse
+      required:
+        - success
+      type: object
+      properties:
+        success:
+          title: Success
+          type: boolean
     Document:
       title: Document
-      required:
-        - text
       type: object
       properties:
         id:
@@ -154,62 +214,16 @@ components:
           title: Text
           type: string
         metadata:
-          $ref: "#/components/schemas/DocumentMetadata"
-    DocumentMetadata:
-      title: DocumentMetadata
+          $ref: '#/components/schemas/DocumentMetadata'
+    DocumentChunkMetadata:
+      title: DocumentChunkMetadata
       type: object
       properties:
         title:
           title: Title
           type: string
         type:
-          title: Document Type
-          type: string
-        source:
-          title: Source
-          type: string
-        status:
-          title: Status
-          type: string
-    DocumentReference:
-      title: DocumentReference
-      type: object
-      properties:
-        document_id:
-          title: DocumentId
-          type: string
-        title:
-          title: Title
-          type: string
-        relationship:
-          title: Relationship
-          type: string
-    DocumentRelationship:
-      title: DocumentRelationship
-      type: object
-      properties:
-        from_documents:
-          title: FromDocuments
-          type: array
-          items:
-            $ref: "#/components/schemas/DocumentReference"
-        to_documents:
-          title: ToDocuments
-          type: array
-          items:
-            $ref: "#/components/schemas/DocumentReference"
-    DocumentMetadataFilter:
-      title: DocumentMetadataFilter
-      type: object
-      properties:
-        document_id:
-          title: Document Id
-          type: string
-        title:
-          title: Title
-          type: string
-        type:
-          title: Artifact Type
+          title: Type
           type: string
         source:
           title: Source
@@ -220,56 +234,45 @@ components:
         status:
           title: Status
           type: string
+        document_id:
+          title: Document Id
+          type: string
+        index:
+          title: Index
+          type: integer
+          default: 0
+    DocumentChunkMetadataFilter:
+      title: DocumentChunkMetadataFilter
+      type: object
+      properties:
+        title:
+          title: Title
+          type: string
+        type:
+          title: Type
+          type: string
+        source:
+          title: Source
+          type: string
+        created_at:
+          title: Created At
+          type: string
+        status:
+          title: Status
+          type: string
+        document_id:
+          title: Document Id
+          type: string
+        index:
+          title: Index
+          type: integer
+          default: 0
         start_date:
           title: Start Date
           type: string
         end_date:
           title: End Date
-          type: string          
-    DocumentChunkMetadata:
-      title: DocumentChunkMetadata
-      type: object
-      properties:
-        document_id:
-          title: Document Id
           type: string
-        index:
-          title: index
-          type: number
-        title:
-          title: Title
-          type: string      
-        type:
-          title: Type of document
-          type: string
-        source:
-          title: Source
-          type: string
-        created_at:
-          title: Created At
-          type: string
-        status:
-          title: Status
-          type: string
-    DocumentChunk:
-      title: DocumentChunk
-      required:
-        - text
-        - metadata
-      type: object
-      properties:
-        text:
-          title: Text
-          type: string
-        metadata:
-          $ref: "#/components/schemas/DocumentChunkMetadata"
-        relationships:
-          $ref: "#/components/schemas/DocumentRelationship"
-        embedding:
-          title: Embedding
-          type: array
-          items:
-            type: number
     DocumentChunkWithScore:
       title: DocumentChunkWithScore
       required:
@@ -282,9 +285,9 @@ components:
           title: Text
           type: string
         metadata:
-          $ref: "#/components/schemas/DocumentChunkMetadata"
+          $ref: '#/components/schemas/DocumentChunkMetadata'
         relationships:
-          $ref: "#/components/schemas/DocumentRelationship"
+          $ref: '#/components/schemas/DocumentRelationship'
         embedding:
           title: Embedding
           type: array
@@ -293,6 +296,54 @@ components:
         score:
           title: Score
           type: number
+    DocumentMetadata:
+      title: DocumentMetadata
+      type: object
+      properties:
+        title:
+          title: Title
+          type: string
+        type:
+          title: Type
+          type: string
+        source:
+          title: Source
+          type: string
+        created_at:
+          title: Created At
+          type: string
+        status:
+          title: Status
+          type: string
+    DocumentReference:
+      title: DocumentReference
+      type: object
+      properties:
+        document_id:
+          title: Document Id
+          type: string
+        title:
+          title: Title
+          type: string
+        relationship:
+          title: Relationship
+          type: string
+    DocumentRelationship:
+      title: DocumentRelationship
+      type: object
+      properties:
+        from_documents:
+          title: From Documents
+          type: array
+          items:
+            $ref: '#/components/schemas/DocumentReference'
+          default: []
+        to_documents:
+          title: To Documents
+          type: array
+          items:
+            $ref: '#/components/schemas/DocumentReference'
+          default: []
     HTTPValidationError:
       title: HTTPValidationError
       type: object
@@ -301,7 +352,7 @@ components:
           title: Detail
           type: array
           items:
-            $ref: "#/components/schemas/ValidationError"
+            $ref: '#/components/schemas/ValidationError'
     Query:
       title: Query
       required:
@@ -312,7 +363,7 @@ components:
           title: Query
           type: string
         filter:
-          $ref: "#/components/schemas/DocumentMetadataFilter"
+          $ref: '#/components/schemas/DocumentChunkMetadataFilter'
         top_k:
           title: Top K
           type: integer
@@ -327,7 +378,7 @@ components:
           title: Queries
           type: array
           items:
-            $ref: "#/components/schemas/Query"
+            $ref: '#/components/schemas/Query'
     QueryResponse:
       title: QueryResponse
       required:
@@ -338,12 +389,11 @@ components:
           title: Results
           type: array
           items:
-            $ref: "#/components/schemas/QueryResult"
+            $ref: '#/components/schemas/QueryResult'
     QueryResult:
       title: QueryResult
       required:
         - query
-        - results
       type: object
       properties:
         query:
@@ -353,7 +403,17 @@ components:
           title: Results
           type: array
           items:
-            $ref: "#/components/schemas/DocumentChunkWithScore"
+            $ref: '#/components/schemas/DocumentChunkWithScore'
+          default: []
+    ReferenceResponse:
+      title: ReferenceResponse
+      required:
+        - success
+      type: object
+      properties:
+        success:
+          title: Success
+          type: boolean
     UpsertRequest:
       title: UpsertRequest
       required:
@@ -364,7 +424,7 @@ components:
           title: Documents
           type: array
           items:
-            $ref: "#/components/schemas/Document"      
+            $ref: '#/components/schemas/Document'
     UpsertResponse:
       title: UpsertResponse
       required:
@@ -376,27 +436,6 @@ components:
           type: array
           items:
             type: string
-    DeleteRequest:
-      title: DeleteRequest
-      type: object
-      properties:
-        ids:
-          title: Ids
-          type: array
-          items:
-            type: string
-        filter:
-          $ref: "#/components/schemas/DocumentMetadataFilter"
-        delete_all:
-          title: Delete All
-          type: boolean
-    DeleteResponse:
-      title: DeleteResponse
-      type: object
-      properties:
-        success:
-          title: Success
-          type: boolean
     ValidationError:
       title: ValidationError
       required:
@@ -418,58 +457,6 @@ components:
         type:
           title: Error Type
           type: string
-    AddReferenceRequest:
-      title: AddReferenceRequest
-      required:
-        - from_id
-        - to_id
-        - from_relationship_type
-        - to_relationship_type
-      type: object
-      properties:
-        from_id:
-          title: From ID
-          type: string
-        to_id:
-          title: To ID
-          type: string
-        from_relationship_type:
-          title: From Relationship Type
-          type: string
-        to_relationship_type:
-          title: To Relationship Type
-          type: string
-    AddReferenceResponse:
-      title: AddReferenceResponse
-      required:
-        - success
-      type: object
-      properties:
-        success:
-          title: Success
-          type: boolean
-    DeleteReferenceRequest:
-      title: DeleteReferenceRequest      
-      required:
-        - from_id
-        - to_id
-      type: object
-      properties:
-        from_id:
-          title: From ID
-          type: string
-        to_id:
-          title: To ID
-          type: string
-    DeleteReferenceResponse:
-      title: DeleteReferenceResponse
-      required:
-        - success
-      type: object
-      properties:
-        success:
-          title: Success
-          type: boolean
   securitySchemes:
     HTTPBearer:
       type: http

@@ -249,11 +249,6 @@ class WeaviateDataStore(DataStore):
             logger.error(f"Error with upsert: {e}", exc=True)
             raise
         
-    async def _query(self, queries: List[QueryWithEmbedding]) -> List[QueryResult]:
-    
-        return await asyncio.gather(*[self._single_query(query) for query in queries])
-    
-    
     async def _query_seq(self, queries: List[QueryWithEmbedding]) -> List[QueryResult]:
         try:            
             results = []
@@ -267,6 +262,9 @@ class WeaviateDataStore(DataStore):
             logger.error(f"Error with query: {e}", exc=True)
             raise
 
+    async def _query(self, queries: List[QueryWithEmbedding]) -> List[QueryResult]:
+    
+        return await asyncio.gather(*[self._single_query(query) for query in queries])            
 
     async def _single_query(self, query: QueryWithEmbedding) -> QueryResult:
             
@@ -275,7 +273,7 @@ class WeaviateDataStore(DataStore):
                 
             query_results = self._process_response(result)
             
-            logger.info(f"Processed {len(query_results)} query results.")
+            logger.info(f"query_results: {query_results}")
             
             return QueryResult(query=query.query, results=query_results)
         
@@ -286,9 +284,13 @@ class WeaviateDataStore(DataStore):
 
     def _execute_query(self, query: QueryWithEmbedding):
         try:
-            filters_ = WeaviateDataStore.build_filters(query.filter) if hasattr(query, "filter") and query.filter else None
+            filters_ = self.build_filters(query.filter) if hasattr(query, "filter") and query.filter else None
             
-            query_builder = self.client.query.get(WEAVIATE_CLASS, self._get_fields()).with_hybrid(query=query.query, alpha=0.5, vector=query.embedding).with_limit(query.top_k).with_additional(["id","score"])
+            query_builder = self.client.query\
+                .get(WEAVIATE_CLASS, self._get_fields()) \
+                .with_hybrid(query=query.query, alpha=0.5, vector=query.embedding) \
+                .with_limit(query.top_k) \
+                .with_additional(["id","score"])
             
             if filters_:
                 query_builder = query_builder.with_where(filters_)
@@ -347,13 +349,23 @@ class WeaviateDataStore(DataStore):
                     if from_doc is not None:
                         for ref in from_doc:
                             if ref is not None:
-                                doc_ref = DocumentReference(document_id=ref["document_id"], title=ref["title"], relationship=relationship["relationship_type"])
+                                doc_ref = DocumentReference(
+                                    document_id=ref["document_id"] if ref.get("document_id") else "", 
+                                    title=ref["title"] if ref.get("title") else "",
+                                    status=ref["status"] if ref.get("status") else "",
+                                    relationship=relationship["relationship_type"]
+                                )
                                 from_documents.append(doc_ref)
     
                     if to_doc is not None:
                         for ref in to_doc:
                             if ref is not None:
-                                doc_ref = DocumentReference(document_id=ref["document_id"], title=ref["title"], relationship=relationship["relationship_type"])
+                                doc_ref = DocumentReference(
+                                    document_id=ref["document_id"] if ref.get("document_id") else "", 
+                                    title=ref["title"] if ref.get("title") else "",
+                                    status=ref["status"] if ref.get("status") else "",
+                                    relationship=relationship["relationship_type"]
+                                )
                                 to_documents.append(doc_ref)
 
             text = resp["text"] if resp.get("text") else ""
@@ -393,6 +405,8 @@ class WeaviateDataStore(DataStore):
             )
     
             logger.debug(f"doc_chunk={doc_chunk}")
+
+            return doc_chunk
     
         except Exception as e:
             logger.error(f"Failed to process document chunk: {e}", exc_info=True)
