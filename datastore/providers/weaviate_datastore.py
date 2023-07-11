@@ -590,17 +590,30 @@ class WeaviateDataStore(DataStore):
         """
         Get the chunk ID for a document
         """
+        if not document_id:
+            raise ValueError("Document ID cannot be empty")
+    
         try:
             # Build the filter for the document
             document_filter = self.build_filters(DocumentChunkMetadataFilter(document_id=document_id, index=0))
     
             # Get the first chunk for the document
-            document_chunk = self.client.query.get(WEAVIATE_CLASS).with_where(document_filter).with_additional(["id"]).do()
+            document_chunk = self.client.query.get(WEAVIATE_CLASS)\
+                .with_where(document_filter)\
+                .with_additional(["id"])\
+                .do()
+    
+            # Check if the response is empty or not
+            if not document_chunk['data']['Get']['OpenAIDocument']:
+                raise ValueError(f"No document found with ID {document_id}")
     
             # Extract the 'id' from the '_additional' field of the response
             chunk_id = document_chunk['data']['Get']['OpenAIDocument'][0]['_additional']['id']
     
             return chunk_id
+        except (KeyError, IndexError) as e:
+            logger.error(f"Failed to get chunk ID for {document_id} due to {e.__class__.__name__}: {e}. Document chunk: {document_chunk}", exc_info=True)
+            raise
         except Exception as e:
             logger.error(f"Failed to get chunk ID for {document_id}: {e}", exc_info=True)
             raise
