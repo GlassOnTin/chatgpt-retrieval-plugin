@@ -184,11 +184,6 @@ async def get_openapi_yaml(request: Request):
     openapi_yaml = yaml.safe_dump(openapi_schema)
     return Response(content=openapi_yaml, media_type="application/x-yaml")
 
-@sub_app.get("/openapi.yaml", include_in_schema=False)
-async def get_sub_openapi_yaml():
-    openapi_schema = sub_app.openapi()
-    openapi_yaml = yaml.safe_dump(openapi_schema)
-    return Response(content=openapi_yaml, media_type="application/x-yaml")
 
 # Add a default representer
 def default_representer(dumper, data):
