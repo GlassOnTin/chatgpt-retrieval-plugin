@@ -350,9 +350,9 @@ class WeaviateDataStore(DataStore):
                         for ref in from_doc:
                             if ref is not None:
                                 doc_ref = DocumentReference(
-                                    document_id=ref["document_id"], 
-                                    title=ref["title"], 
-                                    status=ref["status"],
+                                    document_id=ref["document_id"] if ref.get("document_id") else "", 
+                                    title=ref["title"] if ref.get("title") else "",
+                                    status=ref["status"] if ref.get("status") else "",
                                     relationship=relationship["relationship_type"]
                                 )
                                 from_documents.append(doc_ref)
@@ -361,9 +361,9 @@ class WeaviateDataStore(DataStore):
                         for ref in to_doc:
                             if ref is not None:
                                 doc_ref = DocumentReference(
-                                    document_id=ref["document_id"], 
-                                    title=ref["title"], 
-                                    status=ref["status"],
+                                    document_id=ref["document_id"] if ref.get("document_id") else "", 
+                                    title=ref["title"] if ref.get("title") else "",
+                                    status=ref["status"] if ref.get("status") else "",
                                     relationship=relationship["relationship_type"]
                                 )
                                 to_documents.append(doc_ref)
