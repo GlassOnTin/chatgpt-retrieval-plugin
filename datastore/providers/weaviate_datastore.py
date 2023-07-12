@@ -213,16 +213,18 @@ class WeaviateDataStore(DataStore):
             with self.client.batch as batch:
                 for doc_id, doc_chunks in chunks.items():
                     logger.debug(f"Upserting {doc_id} with {len(doc_chunks)} chunks")
-                    for doc_chunk in doc_chunks:
+                    for i, doc_chunk in enumerate(doc_chunks):
                         # we generate a uuid regardless of the format of the document_id because
                         # weaviate needs a uuid to store each document chunk and
                         # a document chunk cannot share the same uuid
                         chunk_uuid = generate_uuid5(doc_chunk, WEAVIATE_CLASS)
                         metadata = doc_chunk.metadata
+                        metadata.index = i
                         doc_chunk_dict = doc_chunk.dict()
                         doc_chunk_dict.pop("metadata")
                         for key, value in metadata.dict().items():
                             doc_chunk_dict[key] = value
+                            
                         doc_chunk_dict["relationships"] = (
                             doc_chunk_dict.pop("relationships").value
                             if doc_chunk_dict["relationships"]

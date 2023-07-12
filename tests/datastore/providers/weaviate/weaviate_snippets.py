@@ -5,7 +5,6 @@ import weaviate
 client = weaviate.Client("http://weaviate-uy01:8080")
 
 WEAVIATE_CLASS="OpenAIDocument"
-
 WEAVIATE_RELATIONSHIP_CLASS = "OpenAIRelationship"
 
 #=========== SCHEMAS ===========
@@ -18,6 +17,24 @@ print(json.dumps(client.schema.get(), indent=4))
 # Get OpenAIDocument schema
 #openai_class = client.schema.get(WEAVIATE_CLASS)["properties"]
 #print(json.dumps(openai_class, indent=4))
+
+# Get all documents
+data = client.data_object.get(); print(json.dumps(data, indent=4))
+
+# Get by id
+print(client.data_object.get_by_id("ef80dcbc-db0e-4496-af7f-8db2b3601f20", class_name=WEAVIATE_CLASS))
+
+# Brute force get by property
+def get_by_property(property, value, **kwargs):
+    # get all data objects
+    data = client.data_object.get(**kwargs)
+    # filter the objects based on document_id
+    filtered_data = [obj for obj in data['objects'] if obj['properties'].get(property) == value]
+    # return the matching documents
+    return filtered_data if filtered_data else None
+
+print(json.dumps(get_by_property("document_id", "ef80dcbc-db0e-4496-af7f-8db2b3601f20", class_name=WEAVIATE_CLASS), indent=4))
+print(json.dumps(get_by_property("type", "Writing Techniques", class_name=WEAVIATE_CLASS), indent=4))
 
 #======== Create two documents======
 import uuid
@@ -46,9 +63,6 @@ to_id = client.data_object.create(
     }, WEAVIATE_CLASS,
     uuid = doc_id2
 )
-
-data = client.data_object.get(); print(json.dumps(data, indent=4))
-
 
 #========= DOCUMENT QUERY =========
 QUERY="eiffel"
