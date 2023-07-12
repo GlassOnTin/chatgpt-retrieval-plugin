@@ -290,10 +290,12 @@ class WeaviateDataStore(DataStore):
             
             query_builder = self.client.query\
                 .get(WEAVIATE_CLASS, self._get_fields()) \
-                .with_hybrid(query=query.query, alpha=0.5, vector=query.embedding) \
                 .with_limit(query.top_k) \
                 .with_additional(["id","score"])
-            
+
+            if query.query and query.embedding:
+                query_builder = query_builder.with_hybrid(query=query.query, alpha=0.5, vector=query.embedding)
+
             if filters_:
                 query_builder = query_builder.with_where(filters_)
                 
@@ -440,53 +442,63 @@ class WeaviateDataStore(DataStore):
             return False
 
         if ids:
-            operands = [
-                {"path": ["document_id"], "operator": "Equal", "valueString": id}
-                for id in ids
-            ]
-
-            where_clause = {"operator": "Or", "operands": operands}
-
-            logger.debug(f"Deleting vectors from index {WEAVIATE_CLASS} with ids {ids}")
-            logger.debug(f"Where clause: {where_clause}")
-            try:
-                result = self.client.batch.delete_objects(
-                    class_name=WEAVIATE_CLASS, where=where_clause, output="verbose"
-                )
-                logger.debug(f"Delete result: {result}")
-
-            except Exception as e:
-                logger.error(f"Failed to delete vectors with ids {ids}: {e}")
-                return False
-
-            if not bool(result["results"]["successful"]):
-                logger.debug(
-                    f"Failed to delete the following objects: {result['results']['objects']}"
-                )
-                return False
+            return await self._delete_by_ids(ids)
 
         if filter:
-            where_clause = WeaviateDataStore.build_filters(filter)
+            return await self._delete_by_filter(filter)
 
-            logger.debug(
-                f"Deleting vectors from index {WEAVIATE_CLASS} with filter {where_clause}"
+        return True
+
+    async def _delete_by_ids(self, ids: List[str]) -> bool:
+        operands = [
+            {"path": ["document_id"], "operator": "Equal", "valueString": id}
+            for id in ids
+        ]
+
+        where_clause = {"operator": "Or", "operands": operands}
+
+        logger.debug(f"Deleting vectors from index {WEAVIATE_CLASS} with ids {ids}")
+        logger.debug(f"Where clause: {where_clause}")
+        try:
+            result = self.client.batch.delete_objects(
+                class_name=WEAVIATE_CLASS, where=where_clause, output="verbose"
             )
-            logger.debug(f"Where clause: {where_clause}")
-            try:
-                result = self.client.batch.delete_objects(
-                    class_name=WEAVIATE_CLASS, where=where_clause
-                )
-                logger.debug(f"Delete result: {result}")
+            logger.debug(f"Delete result: {result}")
 
-            except Exception as e:
-                logger.error(f"Failed to delete vectors with filter {where_clause}: {e}")
-                return False
+        except Exception as e:
+            logger.error(f"Failed to delete vectors with ids {ids}: {e}")
+            return False
 
-            if not bool(result["results"]["successful"]):
-                logger.debug(
-                    f"Failed to delete the following objects: {result['results']['objects']}"
-                )
-                return False
+        if not bool(result["results"]["successful"]):
+            logger.debug(
+                f"Failed to delete the following objects: {result['results']['objects']}"
+            )
+            return False
+
+        return True
+
+    async def _delete_by_filter(self, filter: DocumentChunkMetadataFilter) -> bool:
+        where_clause = WeaviateDataStore.build_filters(filter)
+
+        logger.debug(
+            f"Deleting vectors from index {WEAVIATE_CLASS} with filter {where_clause}"
+        )
+        logger.debug(f"Where clause: {where_clause}")
+        try:
+            result = self.client.batch.delete_objects(
+                class_name=WEAVIATE_CLASS, where=where_clause
+            )
+            logger.debug(f"Delete result: {result}")
+
+        except Exception as e:
+            logger.error(f"Failed to delete vectors with filter {where_clause}: {e}")
+            return False
+
+        if not bool(result["results"]["successful"]):
+            logger.debug(
+                f"Failed to delete the following objects: {result['results']['objects']}"
+            )
+            return False
 
         return True
 
@@ -500,7 +512,7 @@ class WeaviateDataStore(DataStore):
             "default": {"operator": "Equal", "value_key": "valueString"}
         }
         
-        print(f"filter={filter}")
+        print(f"filter: {filter}")
         
         for attr, value in filter.__dict__.items():
             if value is not None:
