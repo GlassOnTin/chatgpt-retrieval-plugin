@@ -100,7 +100,7 @@ async def upsert(
 @common_router.post(
     "/query",
     response_model=QueryResponse,
-    description="Accepts an array of search query objects. Each object contains a query string and an optional filter. The query string specifies the content to search for in the database. The optional filter refines the results based on certain criteria such as creation date, document ID, source, status, title, and type. The filter can also include 'start_date' and 'end_date' fields to retrieve documents created within a specific time range. If a 'ResponseTooLargeError' occurs, consider breaking down complex queries into simpler sub-queries or reducing the 'top_k' parameter, which determines the maximum number of results to return. Frequent refinement of results by criteria such as time is not recommended."
+    description="Accepts an array of search query objects with a query string and optional filter. The filter refines results based on criteria like creation date, document ID, source, status, title, and type, and can include 'start_date' and 'end_date'. If 'ResponseTooLargeError' occurs, simplify queries or reduce 'top_k'."
 )
 async def query(
     request: QueryRequest = Body(...),
@@ -117,7 +117,8 @@ async def query(
 @common_router.post(
     "/delete",
     response_model=DeleteResponse,
-    description="Accepts an array of IDs, a filter, or a delete_all flag. Deletes documents matching IDs or filter criteria like creation date, document ID, source, status, title, and type. The filter can include 'start_date' and 'end_date' for time range deletion. If delete_all is true, all documents are deleted. Use filter or specific IDs to avoid performance issues."
+    description="Accepts IDs array, filter, or delete_all flag. Deletes documents matching IDs or filter criteria. Filter can include 'start_date' and 'end_date'. If delete_all is true, all documents are deleted. Use filter or IDs to avoid performance issues."
+
 )
 async def delete(
     request: DeleteRequest = Body(...),
