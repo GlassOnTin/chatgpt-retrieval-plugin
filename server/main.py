@@ -100,7 +100,7 @@ async def upsert(
 @common_router.post(
     "/query",
     response_model=QueryResponse,
-    description="Accepts an array of search query objects with a query string and optional filter. The filter refines results based on criteria like creation date, document ID, source, status, title, and type, and can include 'start_date' and 'end_date'. If 'ResponseTooLargeError' occurs, simplify queries or reduce 'top_k'."
+    description="Accepts an array of search query objects with a query string and optional filter. The filter refines results based on criteria like creation date, document ID, source, status, title, and type, and can include 'start_date' and 'end_date'. If 'ResponseTooLargeError' occurs, reduce 'top_k'."
 )
 async def query(
     request: QueryRequest = Body(...),
