@@ -34,7 +34,7 @@ def get_by_property(property, value, **kwargs):
     return filtered_data if filtered_data else None
 
 print(json.dumps(get_by_property("document_id", "ef80dcbc-db0e-4496-af7f-8db2b3601f20", class_name=WEAVIATE_CLASS), indent=4))
-print(json.dumps(get_by_property("type", "Writing Techniques", class_name=WEAVIATE_CLASS), indent=4))
+print(json.dumps(get_by_property("title", "Novel Strategy", class_name=WEAVIATE_CLASS), indent=4))
 
 #======== Create two documents======
 import uuid
