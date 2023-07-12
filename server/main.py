@@ -4,6 +4,7 @@
 # and want to access the openapi.json when you run the app locally at http://0.0.0.0:8000/sub/openapi.json.
 import os
 from typing import Optional
+import json
 import yaml
 from pydantic import AnyUrl
 import uvicorn
@@ -44,8 +45,8 @@ app.mount("/.well-known", StaticFiles(directory=".well-known"), name="static")
 
 # Create a sub-application, in order to access a subset of the endpoints in the OpenAPI schema, found at http://0.0.0.0:8000/sub/openapi.json when the app is running locally
 sub_app = FastAPI(
-    title="Retrieval Plugin API",
-    description="A retrieval API for querying and filtering documents based on natural language queries and metadata",
+    title="Graph Memory",
+    description= "This plugin provides functionality to insert, update, or delete documents in a vector database. Each document consists of 'text' and 'metadata', with the latter including 'title', 'type', 'source', and 'status'. Documents are stored as chunks in the database, each with a sequential 'index'. All chunks of a document share a common 'document_id'. To update or delete a document, use the 'document_id'. The plugin also supports adding and deleting references between documents, which represent specific types of relationships. When storing new documents, consider the graph structure and memory engrams. A well-structured graph can improve query performance and the quality of results. For example, related documents can be linked via references, and commonly used information can be stored in separate documents and referenced as needed. The 'index' property can be used to retrieve specific chunks of a document.",
     version="1.0.0",
     servers=[{"url": "https://your-app-url.com"}],
     dependencies=[Depends(validate_token)],
@@ -99,8 +100,7 @@ async def upsert(
 @common_router.post(
     "/query",
     response_model=QueryResponse,
-    # NOTE: We are describing the shape of the API endpoint input due to a current limitation in parsing arrays of objects from OpenAPI schemas. This will not be necessary in the future.
-    description="Accepts search query objects array each with query and optional filter. Break down complex questions into sub-questions. Refine results by criteria, e.g. time, don't do this often. Split queries if ResponseTooLargeError occurs.",
+    description="Accepts an array of search query objects. Each object contains a query string and an optional filter. The query string specifies the content to search for in the database. The optional filter refines the results based on certain criteria such as creation date, document ID, source, status, title, and type. The filter can also include 'start_date' and 'end_date' fields to retrieve documents created within a specific time range. If a 'ResponseTooLargeError' occurs, consider breaking down complex queries into simpler sub-queries or reducing the 'top_k' parameter, which determines the maximum number of results to return. Frequent refinement of results by criteria such as time is not recommended."
 )
 async def query(
     request: QueryRequest = Body(...),
@@ -116,7 +116,8 @@ async def query(
 
 @common_router.post(
     "/delete",
-    response_model=DeleteResponse
+    response_model=DeleteResponse,
+    description="Accepts an array of document IDs, an optional filter, or a delete_all flag. If an array of IDs is provided, the endpoint deletes the documents with those IDs. If a filter is provided, the endpoint deletes the documents that match the filter criteria, such as creation date, document ID, source, status, title, and type. The filter can also include 'start_date' and 'end_date' fields to delete documents created within a specific time range. If the delete_all flag is set to true, the endpoint deletes all documents in the database. Note that deleting a large number of documents at once may cause performance issues. It's recommended to use the filter or provide specific IDs for deletion whenever possible."
 )
 async def delete(
     request: DeleteRequest = Body(...),
@@ -204,6 +205,29 @@ async def startup():
     openapi_yaml = yaml.safe_dump(openapi_schema)
     with open(".well-known/openapi.yaml", "w") as file:
         file.write(openapi_yaml)
+
+    # Generate the ai-plugin.json file with description from the app
+    ai_plugin_info = {
+        "schema_version": "v1",
+        "name_for_model": "GraphMemory",
+        "name_for_human": "Graph Memory",
+        "description_for_model": sub_app.description,  # Use the description from the sub_app
+        "description_for_human": "Vector Graph Memory with Document Relationships",
+        "auth": {
+            "type": "user_http",
+            "authorization_type": "bearer"
+        },
+        "api": {
+            "type": "openapi",
+            "url": "https://your-app-url.com/.well-known/openapi.yaml",
+            "has_user_authentication": False
+        },
+        "logo_url": "https://your-app-url.com/.well-known/logo.png",
+        "contact_email": "hello@contact.com", 
+        "legal_info_url": "hello@legal.com"
+    }
+    with open(".well-known/ai-plugin.json", "w") as file:
+        json.dump(ai_plugin_info, file, indent=4)
 
     global datastore
     datastore = await get_datastore()
