@@ -1,13 +1,22 @@
 from pydantic import BaseModel
 from typing import List, Optional
 
-
 class DocumentMetadata(BaseModel):
     title: Optional[str] = None
     type: Optional[str] = None
     source: Optional[str] = None
     created_at: Optional[str] = None
     status: Optional[str] = None
+
+class DocumentChunkMetadata(DocumentMetadata):
+    document_id: Optional[str] = None
+    index: Optional[int] = 0
+
+
+class DocumentChunkMetadataFilter(DocumentChunkMetadata):
+    start_date: Optional[str] = None  # any date string format
+    end_date: Optional[str] = None  # any date string format
+
 
 class DocumentReference(BaseModel):
     document_id: Optional[str] = None
@@ -18,15 +27,6 @@ class DocumentReference(BaseModel):
 class DocumentRelationship(BaseModel):
     from_documents: Optional[List[DocumentReference]] = []
     to_documents: Optional[List[DocumentReference]] = []
-
-class DocumentChunkMetadata(DocumentMetadata):
-    document_id: Optional[str] = None
-    index: Optional[int] = 0
-
-
-class DocumentChunkMetadataFilter(DocumentChunkMetadata):
-    start_date: Optional[str] = None  # any date string format
-    end_date: Optional[str] = None  # any date string format
 
 class DocumentChunk(BaseModel):
     text: str

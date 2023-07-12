@@ -135,7 +135,7 @@ class WeaviateDataStore(DataStore):
 
         return error_messages
 
-    def __init__(self):
+    def __init__(self):        
         auth_credentials = self._build_auth_credentials()
 
         url = f"{WEAVIATE_HOST}:{WEAVIATE_PORT}"
@@ -161,14 +161,22 @@ class WeaviateDataStore(DataStore):
     def _create_class_if_not_exists(self, class_name, schema):
         try:            
             existing_schema = self.client.schema.get(class_name)
-        except weaviate.exceptions.UnexpectedStatusCodeException:
+
+        except Exception as e:
+            logger.info(f"Failed to get weaviate class {class_name}: {e}")
             existing_schema = None
+
         if not existing_schema:
-            new_schema_properties = extract_schema_properties(schema)
-            logger.debug(
-                f"Creating collection {class_name} with properties {new_schema_properties}"
-            )
-            self.client.schema.create_class(schema)
+            try:
+                new_schema_properties = extract_schema_properties(schema)
+                logger.debug(
+                    f"Creating class {class_name} with properties {new_schema_properties}"
+                )            
+                self.client.schema.create_class(schema)
+
+            except Exception as e:
+                logger.Error(f"Failed to create weaviate class {class_name}: {e}")
+                raise                
 
     def _add_relationships_property_to_document_class(self):
         relationships_property = {
@@ -184,14 +192,20 @@ class WeaviateDataStore(DataStore):
         try: 
             # Get the schema of the OpenAIDocument class
             schema = self.client.schema.get(WEAVIATE_CLASS)
-        except weaviate.exceptions.UnexpectedStatusCodeException:
-            logger.debug(f"Failed to get {WEAVIATE_CLASS}")   
+
+        except Exception as e:
+            logger.debug(f"Failed to get {WEAVIATE_CLASS}")  
+            raise 
 
         # Check if the 'relationships' property already exists
-        if not any(prop for prop in schema["properties"] if prop["name"] == "relationships"):
-            # If the property doesn't exist, add it
-            self.client.schema.property.create(WEAVIATE_CLASS, relationships_property)
-
+        try:
+            if not any(prop for prop in schema["properties"] if prop["name"] == "relationships"):
+                # If the property doesn't exist, add it
+                self.client.schema.property.create(WEAVIATE_CLASS, relationships_property)
+        
+        except Exception as e:
+            logger.debug(f"Failed to add relationships property to {WEAVIATE_CLASS}")  
+            raise 
 
     @staticmethod
     def _build_auth_credentials():

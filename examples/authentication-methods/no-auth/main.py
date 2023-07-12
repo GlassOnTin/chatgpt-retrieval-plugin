@@ -54,8 +54,7 @@ async def upsert_file(
     try:
         ids = await datastore.upsert([document])
         return UpsertResponse(ids=ids)
-    except Exception as e:
-        print("Error:", e)
+    except Exception as e:        
         raise HTTPException(status_code=500, detail=f"str({e})")
 
 
@@ -69,9 +68,8 @@ async def upsert(
     try:
         ids = await datastore.upsert(request.documents)
         return UpsertResponse(ids=ids)
-    except Exception as e:
-        print("Error:", e)
-        raise HTTPException(status_code=500, detail="Internal Service Error")
+    except Exception as e:        
+        raise HTTPException(status_code=500, detail=f"str({e})")
 
 
 @app.post(
@@ -87,9 +85,7 @@ async def query_main(
         )
         return QueryResponse(results=results)
     except Exception as e:
-        print("Error:", e)
-        raise HTTPException(status_code=500, detail="Internal Service Error")
-
+        raise HTTPException(status_code=500, detail=f"str({e})")
 
 @sub_app.post(
     "/query",
@@ -105,9 +101,7 @@ async def query(
         )
         return QueryResponse(results=results)
     except Exception as e:
-        print("Error:", e)
-        raise HTTPException(status_code=500, detail="Internal Service Error")
-
+        raise HTTPException(status_code=500, detail=f"str({e})")
 
 @app.delete(
     "/delete",
@@ -129,14 +123,16 @@ async def delete(
         )
         return DeleteResponse(success=success)
     except Exception as e:
-        print("Error:", e)
-        raise HTTPException(status_code=500, detail="Internal Service Error")
-
+        raise HTTPException(status_code=500, detail=f"str({e})")
 
 @app.on_event("startup")
 async def startup():
     global datastore
-    datastore = await get_datastore()
+    try:        
+        datastore = await get_datastore()
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"str({e})")
 
 
 def start():
