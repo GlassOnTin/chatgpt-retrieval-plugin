@@ -217,46 +217,16 @@ class WeaviateDataStore(DataStore):
             return None
 
     async def _upsert(self, chunks: Dict[str, List[DocumentChunk]]) -> List[str]:
-        """
-        Takes in a dict of list of document chunks and inserts them into the database.
-        Return a list of document ids.
-        """
+        
         try:  
             doc_ids = []
-
+    
             with self.client.batch as batch:
                 for doc_id, doc_chunks in chunks.items():
                     logger.debug(f"Upserting {doc_id} with {len(doc_chunks)} chunks")
                     for i, doc_chunk in enumerate(doc_chunks):
-                        # we generate a uuid regardless of the format of the document_id because
-                        # weaviate needs a uuid to store each document chunk and
-                        # a document chunk cannot share the same uuid
-                        chunk_uuid = generate_uuid5(doc_chunk, WEAVIATE_CLASS)
-                        metadata = doc_chunk.metadata
-                        metadata.index = i
-                        doc_chunk_dict = doc_chunk.dict()
-                        doc_chunk_dict.pop("metadata")
-                        for key, value in metadata.dict().items():
-                            doc_chunk_dict[key] = value
-                            
-                        doc_chunk_dict["relationships"] = (
-                            doc_chunk_dict.pop("relationships").value
-                            if doc_chunk_dict["relationships"]
-                            else None
-                        )
-                        
-                        # Set the 'created_at' field to the current system UTC time
-                        doc_chunk_dict['created_at'] = datetime.datetime.now(datetime.timezone.utc).isoformat()
-
-                        embedding = doc_chunk_dict.pop("embedding")
-
-                        batch.add_data_object(
-                            uuid=chunk_uuid,
-                            data_object=doc_chunk_dict,
-                            class_name=WEAVIATE_CLASS,
-                            vector=embedding,
-                        )
-
+                        chunk_uuid, doc_chunk_dict = self._prepare_chunk(doc_chunk, i)
+                        self._add_chunk_to_batch(batch, chunk_uuid, doc_chunk_dict)
                     doc_ids.append(doc_id)
                 batch.flush()
             return doc_ids
@@ -264,6 +234,37 @@ class WeaviateDataStore(DataStore):
         except Exception as e:
             logger.error(f"Error with upsert: {e}", exc=True)
             raise
+
+    def _prepare_chunk(self, doc_chunk: DocumentChunk, index: int) -> Tuple[str, Dict]:
+        
+        chunk_uuid = generate_uuid5(doc_chunk, WEAVIATE_CLASS)
+        metadata = doc_chunk.metadata
+        metadata.index = index
+        doc_chunk_dict = doc_chunk.dict()
+        doc_chunk_dict.pop("metadata")
+        for key, value in metadata.dict().items():
+            doc_chunk_dict[key] = value
+            
+        doc_chunk_dict["relationships"] = (
+            doc_chunk_dict.pop("relationships").value
+            if doc_chunk_dict["relationships"]
+            else None
+        )
+        
+        doc_chunk_dict['created_at'] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        
+        embedding = doc_chunk_dict.pop("embedding")
+        
+        return chunk_uuid, doc_chunk_dict
+    
+    def _add_chunk_to_batch(self, batch, chunk_uuid: str, doc_chunk_dict: Dict):
+        
+        batch.add_data_object(
+            uuid=chunk_uuid,
+            data_object=doc_chunk_dict,
+            class_name=WEAVIATE_CLASS,
+            vector=embedding,
+        )
         
     async def _query_seq(self, queries: List[QueryWithEmbedding]) -> List[QueryResult]:
         try:            
