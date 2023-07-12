@@ -117,7 +117,7 @@ async def query(
 @common_router.post(
     "/delete",
     response_model=DeleteResponse,
-    description="Accepts an array of document IDs, an optional filter, or a delete_all flag. If an array of IDs is provided, the endpoint deletes the documents with those IDs. If a filter is provided, the endpoint deletes the documents that match the filter criteria, such as creation date, document ID, source, status, title, and type. The filter can also include 'start_date' and 'end_date' fields to delete documents created within a specific time range. If the delete_all flag is set to true, the endpoint deletes all documents in the database. Note that deleting a large number of documents at once may cause performance issues. It's recommended to use the filter or provide specific IDs for deletion whenever possible."
+    description="Accepts an array of IDs, a filter, or a delete_all flag. Deletes documents matching IDs or filter criteria like creation date, document ID, source, status, title, and type. The filter can include 'start_date' and 'end_date' for time range deletion. If delete_all is true, all documents are deleted. Use filter or specific IDs to avoid performance issues."
 )
 async def delete(
     request: DeleteRequest = Body(...),
