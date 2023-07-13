@@ -39,8 +39,7 @@ class DataStore(ABC):
                 ]
             )
 
-            chunks = get_document_chunks(documents, chunk_token_size)
-            logger.info(f"chunks: {chunks}")
+            chunks = get_document_chunks(documents, chunk_token_size)            
 
             return await self._upsert(chunks)
         

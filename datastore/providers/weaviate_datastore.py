@@ -40,11 +40,6 @@ SCHEMA = {
     "description": "The datastore class",
     "properties": [
         {
-            "name": "chunk_id",
-            "dataType": ["string"],
-            "description": "The unique id of the chunk",
-        },
-        {
             "name": "index",
             "dataType": ["int"],
             "description": "The sequential index of the chunk",
@@ -272,8 +267,8 @@ class WeaviateDataStore(DataStore):
             with self.client.batch as batch:
                 for doc_id, doc_chunks in chunks.items():
                     logger.debug(f"Upserting {doc_id} with {len(doc_chunks)} chunks")
-                    for i, doc_chunk in enumerate(doc_chunks):
-                        doc_chunk.metadata.index = i
+                    for doc_chunk in doc_chunks:
+                        logger.debug(f"...batching chunk {doc_chunk.metadata.index} or {len(doc_chunks)}")
                         self._add_chunk_to_batch(batch, doc_chunk)
                     doc_ids.append(doc_id)
                 batch.flush()
