@@ -290,7 +290,7 @@ class WeaviateDataStore(DataStore):
 
         # Remove the metadata section and store this flat in the schema class
         metadata = doc_chunk_dict.pop("metadata")
-        for key, value in metadata.dict().items():
+        for key, value in metadata.items():
             doc_chunk_dict[key] = value
 
         # Add the relationships            
