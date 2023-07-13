@@ -178,15 +178,12 @@ class WeaviateDataStore(DataStore):
 
                 for property_name, property_schema in new_properties.items():
                     if property_name not in existing_properties:
-                        self.client.schema.add_property_to_class(class_name, property_name, property_schema)
-
-                for property_name in existing_properties:
-                    if property_name not in new_properties:
-                        self.client.schema.delete_property_from_class(class_name, property_name)
+                        self.client.schema.property.create(class_name, property_schema)
 
             except Exception as e:
                 logger.error(f"Failed to update weaviate class {class_name}: {e}")
                 raise
+
 
 
     def _add_relationships_property_to_document_class(self):
