@@ -77,8 +77,13 @@ SCHEMA = {
         {
             "name": "status",
             "dataType": ["string"],
-            "description": "The current status (To Do, In Progress, Done)",
-        }
+            "description": "The current status",
+        },
+        {
+            "name": "priority",
+            "dataType": ["int"],
+            "description": "The current priority",
+        },
     ],
 }
 
@@ -103,13 +108,6 @@ SCHEMA_RELATIONSHIP = {
         }
     ],
 }
-
-
-def extract_schema_properties(schema):
-    properties = schema["properties"]
-
-    return {property["name"] for property in properties}
-
 
 class WeaviateDataStore(DataStore):
     def handle_errors(self, results: Optional[List[dict]]) -> List[str]:
@@ -149,28 +147,37 @@ class WeaviateDataStore(DataStore):
         self._initialize_schema()
 
     def _initialize_schema(self):
-        self._create_class_if_not_exists(WEAVIATE_CLASS, SCHEMA)
-        self._create_class_if_not_exists(WEAVIATE_RELATIONSHIP_CLASS, SCHEMA_RELATIONSHIP)
+        self._create_or_update_class(WEAVIATE_CLASS, SCHEMA)
+        self._create_or_update_class(WEAVIATE_RELATIONSHIP_CLASS, SCHEMA_RELATIONSHIP)
         self._add_relationships_property_to_document_class()
 
-    def _create_class_if_not_exists(self, class_name, schema):
+    def _create_or_update_class(self, class_name, schema):
         try:            
             existing_schema = self.client.schema.get(class_name)
 
-        except Exception as e:
+        except:
             existing_schema = None
 
         if not existing_schema:
             try:
-                new_schema_properties = extract_schema_properties(schema)
                 logger.debug(
-                    f"Creating class {class_name} with properties {new_schema_properties}"
+                    f"Creating class {class_name} with schema {schema}"
                 )            
                 self.client.schema.create_class(schema)
 
             except Exception as e:
-                logger.Error(f"Failed to create weaviate class {class_name}: {e}")
-                raise                
+                logger.error(f"Failed to create weaviate class {class_name}: {e}")
+                raise   
+        else:
+            try:
+                logger.debug(
+                    f"Updating class {class_name} with schema {schema}"
+                )
+                self.client.schema.update_config(class_name, schema)
+
+            except Exception as e:
+                logger.error(f"Failed to update weaviate class {class_name}: {e}")
+                raise        
 
     def _add_relationships_property_to_document_class(self):
         relationships_property = {
