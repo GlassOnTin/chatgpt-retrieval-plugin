@@ -81,7 +81,7 @@ SCHEMA = {
         },
         {
             "name": "priority",
-            "dataType": ["int"],
+            "dataType": ["string"],
             "description": "The current priority",
         },
     ],
