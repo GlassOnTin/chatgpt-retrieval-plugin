@@ -354,84 +354,60 @@ class WeaviateDataStore(DataStore):
             logger.error(f"Failed to process response: {e}", exc_info=True)
             raise
         
-    def _process_document_chunk(self, resp):
+    def _process_document_chunk(self, resp, fields):
         try:
             logger.info(f"_process_document_chunk{resp}")
-    
+
             from_documents = []
             to_documents = []
             if resp.get("relationships") is not None:
                 for relationship in resp["relationships"]:
-                    from_doc = relationship.get("from_document")
-                    to_doc = relationship.get("to_document")
-    
-                    if from_doc is not None:
-                        for ref in from_doc:
-                            if ref is not None:
-                                doc_ref = DocumentReference(
-                                    document_id=ref["document_id"] if ref.get("document_id") else "", 
-                                    title=ref["title"] if ref.get("title") else "",
-                                    status=ref["status"] if ref.get("status") else "",
-                                    relationship=relationship["relationship_type"]
-                                )
-                                from_documents.append(doc_ref)
-    
-                    if to_doc is not None:
-                        for ref in to_doc:
-                            if ref is not None:
-                                doc_ref = DocumentReference(
-                                    document_id=ref["document_id"] if ref.get("document_id") else "", 
-                                    title=ref["title"] if ref.get("title") else "",
-                                    status=ref["status"] if ref.get("status") else "",
-                                    relationship=relationship["relationship_type"]
-                                )
-                                to_documents.append(doc_ref)
+                    for direction in ["from_document", "to_document"]:
+                        doc = relationship.get(direction)
+                        if doc is not None:
+                            for ref in doc:
+                                if ref is not None:
+                                    doc_ref = DocumentReference(
+                                        document_id=ref.get("document_id", ""), 
+                                        title=ref.get("title", ""),
+                                        status=ref.get("status", ""),
+                                        relationship=relationship["relationship_type"]
+                                    )
+                                    if direction == "from_document":
+                                        from_documents.append(doc_ref)
+                                    else:
+                                        to_documents.append(doc_ref)
 
-            text = resp["text"] if resp.get("text") else ""
-            score = resp["_additional"]["score"] if resp.get("_additional") and resp["_additional"].get("score") else 0.0
-            document_id = resp["document_id"] if resp.get("document_id") else ""
-            title = resp["title"] if resp.get("title") else ""
-            type_ = resp["type"] if resp.get("type") else ""
-            source = resp["source"] if resp.get("source") else ""
-            created_at = resp["created_at"] if resp.get("created_at") else ""
-            status = resp["status"] if resp.get("status") else ""
-    
-            # Add default values if any of the values are None
-            text = text if text is not None else ""
-            score = score if score is not None else 0.0
-            document_id = document_id if document_id is not None else ""
-            title = title if title is not None else ""
-            type_ = type_ if type_ is not None else ""
-            source = source if source is not None else ""
-            created_at = created_at if created_at is not None else ""
-            status = status if status is not None else ""
-    
+            # Define default values for each property
+            defaults = {field: "" for field in fields}
+
+            # Use the default value for each property if it's not present in resp
+            for key, default in defaults.items():
+                resp.setdefault(key, default)
+
+            score = resp["_additional"]["score"]
+
+            # Create metadata by iterating over the attributes of DocumentChunkMetadata
+            metadata_dict = {attr: resp.get(attr, "") for attr in DocumentChunkMetadata._fields}
+
             doc_chunk = DocumentChunkWithScore(
-                text=text,
+                text=resp["text"],
                 score=score,
-                metadata=DocumentChunkMetadata(
-                    document_id=document_id,
-                    title=title,
-                    type=type_,
-                    source=source,
-                    created_at=created_at,
-                    status=status
-                ),
+                metadata=DocumentChunkMetadata(**metadata_dict),
                 relationships= DocumentRelationship(
                     from_documents=from_documents,
                     to_documents=to_documents
                 )
             )
-    
+
             logger.debug(f"doc_chunk={doc_chunk}")
 
             return doc_chunk
-    
+
         except Exception as e:
             logger.error(f"Failed to process document chunk: {e}", exc_info=True)
             raise
-    
-            
+
 
     async def delete(
         self,
