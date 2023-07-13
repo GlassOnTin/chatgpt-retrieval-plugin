@@ -163,7 +163,6 @@ class WeaviateDataStore(DataStore):
             existing_schema = self.client.schema.get(class_name)
 
         except Exception as e:
-            logger.info(f"Failed to get weaviate class {class_name}: {e}")
             existing_schema = None
 
         if not existing_schema:
@@ -274,8 +273,8 @@ class WeaviateDataStore(DataStore):
                 for doc_id, doc_chunks in chunks.items():
                     logger.debug(f"Upserting {doc_id} with {len(doc_chunks)} chunks")
                     for i, doc_chunk in enumerate(doc_chunks):
-                        chunk_uuid, doc_chunk_dict = self._prepare_chunk(doc_chunk, i)
-                        self._add_chunk_to_batch(batch, chunk_uuid, doc_chunk_dict)
+                        doc_chunk.metadata.index = i
+                        self._add_chunk_to_batch(batch, doc_chunk)
                     doc_ids.append(doc_id)
                 batch.flush()
             return doc_ids
@@ -284,29 +283,28 @@ class WeaviateDataStore(DataStore):
             logger.error(f"Error with upsert: {e}", exc=True)
             raise
 
-    def _prepare_chunk(self, doc_chunk: DocumentChunk, index: int) -> Tuple[str, Dict]:
-        
+    def _add_chunk_to_batch(self, batch, doc_chunk: DocumentChunk):
         chunk_uuid = generate_uuid5(doc_chunk, WEAVIATE_CLASS)
-        metadata = doc_chunk.metadata
-        metadata.index = index
+                
         doc_chunk_dict = doc_chunk.dict()
-        doc_chunk_dict.pop("metadata")
+
+        # Remove the metadata section and store this flat in the schema class
+        metadata = doc_chunk_dict.pop("metadata")
         for key, value in metadata.dict().items():
             doc_chunk_dict[key] = value
-            
+
+        # Add the relationships            
         doc_chunk_dict["relationships"] = (
-            doc_chunk_dict.pop("relationships").value
+            doc_chunk_dict.pop("relationships")
             if doc_chunk_dict["relationships"]
             else None
         )
         
+        # Set the created_at to current time
         doc_chunk_dict['created_at'] = datetime.datetime.now(datetime.timezone.utc).isoformat()
         
+        # Extract the embedding vector
         embedding = doc_chunk_dict.pop("embedding")
-        
-        return chunk_uuid, doc_chunk_dict
-    
-    def _add_chunk_to_batch(self, batch, chunk_uuid: str, doc_chunk_dict: Dict):
         
         batch.add_data_object(
             uuid=chunk_uuid,
@@ -314,7 +312,7 @@ class WeaviateDataStore(DataStore):
             class_name=WEAVIATE_CLASS,
             vector=embedding,
         )
-        
+           
     async def _query_seq(self, queries: List[QueryWithEmbedding]) -> List[QueryResult]:
         try:            
             results = []
