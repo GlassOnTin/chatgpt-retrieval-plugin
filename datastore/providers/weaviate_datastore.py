@@ -361,7 +361,7 @@ class WeaviateDataStore(DataStore):
             logger.error(f"Failed to process response: {e}", exc_info=True)
             raise
         
-    def _process_document_chunk(self, resp, fields):
+    def _process_document_chunk(self, resp):
         try:
             logger.info(f"_process_document_chunk{resp}")
 
@@ -384,6 +384,9 @@ class WeaviateDataStore(DataStore):
                                         from_documents.append(doc_ref)
                                     else:
                                         to_documents.append(doc_ref)
+
+            # Retrieve the fields list from the schema
+            fields = [prop["name"] for prop in SCHEMA["properties"]]
 
             # Define default values for each property
             defaults = {field: "" for field in fields}
