@@ -398,12 +398,13 @@ class WeaviateDataStore(DataStore):
             score = resp["_additional"]["score"]
 
             # Create metadata by iterating over the attributes of DocumentChunkMetadata
-            metadata_dict = {attr: resp.get(attr, "") for attr in DocumentChunkMetadata._fields}
+            metadata_dict = {attr: resp.get(attr, "") for attr in resp.keys()}
+            metadata = DocumentChunkMetadata(**metadata_dict)
 
             doc_chunk = DocumentChunkWithScore(
                 text=resp["text"],
                 score=score,
-                metadata=DocumentChunkMetadata(**metadata_dict),
+                metadata=metadata,
                 relationships= DocumentRelationship(
                     from_documents=from_documents,
                     to_documents=to_documents
