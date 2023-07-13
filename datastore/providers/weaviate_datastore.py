@@ -297,7 +297,7 @@ class WeaviateDataStore(DataStore):
             filters_ = self.build_filters(query.filter) if hasattr(query, "filter") and query.filter else None
             
             query_builder = self.client.query\
-                .get(WEAVIATE_CLASS, self._get_fields()) \
+                .get(WEAVIATE_CLASS, self._get_fields(SCHEMA, SCHEMA_RELATIONSHIP)) \
                 .with_limit(query.top_k) \
                 .with_additional(["id","score"])
 
