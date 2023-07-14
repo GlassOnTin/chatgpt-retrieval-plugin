@@ -767,56 +767,33 @@ class WeaviateDataStore(DataStore):
         # Add the node to the set of visited nodes
         visited.add(node_id)
 
-        # Define the GraphQL query
-        query = f"""
-        {{
-        Get {{
-            Things {{
-            {WEAVIATE_CLASS}(id: "{node_id}") {{
-                id
-                relationships {{
-                ... on {WEAVIATE_RELATIONSHIP_CLASS} {{
-                    from_document {{
-                    ... on {WEAVIATE_CLASS} {{
-                        document_id
-                    }}
-                    }}
-                    to_document {{
-                    ... on {WEAVIATE_CLASS} {{
-                        document_id
-                    }}
-                    }}
-                }}
-                }}
-            }}
-            }}
-        }}
-        }}
-        """
-
-        # Execute the query
-        result = self.client.execute(query)
+        # Get the data object by its ID
+        result = self.client.data_object.get_by_id(node_id, class_name=WEAVIATE_CLASS)
 
         # Get the related objects
-        related_objects = result['data']['Get']['Things'][WEAVIATE_CLASS][0]['relationships']
+        related_objects = result['properties']['relationships']
 
         # Initialize the list of related node IDs
         related_node_ids = []
 
         # Recursively traverse the graph
         for relationship in related_objects:
+            # Get the ID of the related document
+            related_document_id = relationship['beacon'].split('/')[-1]
+
             # If direction is True, traverse to the 'to' node
             if down:
                 if relationship['from_document']['document_id'] == document_id:
-                    related_node_ids.append(relationship['to_document']['document_id'])
-                    related_node_ids += self.get_related_nodes(relationship['to_document']['document_id'], down, visited)
+                    related_node_ids.append(related_document_id)
+                    related_node_ids += self.get_related_nodes(related_document_id, down, visited)
             # If direction is False, traverse to the 'from' node
             else:
                 if relationship['to_document']['document_id'] == document_id:
-                    related_node_ids.append(relationship['from_document']['document_id'])
-                    related_node_ids += self.get_related_nodes(relationship['from_document']['document_id'], down, visited)
+                    related_node_ids.append(related_document_id)
+                    related_node_ids += self.get_related_nodes(related_document_id, down, visited)
 
         return related_node_ids
+
 
     
     @staticmethod
