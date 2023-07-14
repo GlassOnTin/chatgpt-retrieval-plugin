@@ -732,68 +732,74 @@ class WeaviateDataStore(DataStore):
         self.update_count(to_document_id, down=False, increment=increment)
 
     def update_count(self, document_id, down=True, increment=True):
-        # Initialize the set of visited nodes
-        visited = set()
-
-        # Get the Weaviate ID for the document
-        node_id = self.get_chunk_id(document_id)
-
-        # Get the related nodes of the node
-        related_nodes = self.get_related_nodes(document_id, down, visited)
-
-        # Update the count of the node and all its related nodes
-        for related_node_id in related_nodes:
-            # Get the Weaviate ID for the related node
-            related_node_weaviate_id = self.get_chunk_id(related_node_id)
-
-            # Increment or decrement the count of the related node
-            if increment:
-                self.client.data_object.update({ "downcount" if down else "upcount": str(len(related_nodes) + 1) }, related_node_weaviate_id, WEAVIATE_CLASS)
-            else:
-                self.client.data_object.update({ "downcount" if down else "upcount": str(len(related_nodes) - 1) }, related_node_weaviate_id, WEAVIATE_CLASS)
-
-    def get_related_nodes(self, document_id, down=True, visited=None):
-        # Initialize the set of visited nodes if it's not provided
-        if visited is None:
+        try:
+            # Initialize the set of visited nodes
             visited = set()
 
-        # Get the Weaviate ID for the document
-        node_id = self.get_chunk_id(document_id)
+            # Get the related nodes of the node
+            related_nodes = self.get_related_nodes(document_id, down, visited)
 
-        # If the node has already been visited, return an empty list
-        if node_id in visited:
-            return []
+            # Update the count of the node and all its related nodes
+            for related_node_id in related_nodes:
+                # Get the Weaviate ID for the related node
+                related_node_weaviate_id = self.get_chunk_id(related_node_id)
 
-        # Add the node to the set of visited nodes
-        visited.add(node_id)
+                # Increment or decrement the count of the related node
+                if increment:
+                    self.client.data_object.update({ "downcount" if down else "upcount": str(len(related_nodes) + 1) }, related_node_weaviate_id, WEAVIATE_CLASS)
+                else:
+                    self.client.data_object.update({ "downcount" if down else "upcount": str(len(related_nodes) - 1) }, related_node_weaviate_id, WEAVIATE_CLASS)
 
-        # Get the data object by its ID
-        result = self.client.data_object.get_by_id(node_id, class_name=WEAVIATE_CLASS)
+        except Exception as e:
+            logger.error(f"Failed to update_count for document_id={document_id}, down={down}, increment={increment}:\n {e}", exc_info=True)
+            raise
 
-        # Get the related objects
-        related_objects = result['properties']['relationships']
+    def get_related_nodes(self, document_id, down=True, visited=None):
+        try:
+            # Initialize the set of visited nodes if it's not provided
+            if visited is None:
+                visited = set()
 
-        # Initialize the list of related node IDs
-        related_node_ids = []
+            # Get the Weaviate ID for the document
+            node_id = self.get_chunk_id(document_id)
 
-        # Recursively traverse the graph
-        for relationship in related_objects:
-            # Get the ID of the related document
-            related_document_id = relationship['beacon'].split('/')[-1]
+            # If the node has already been visited, return an empty list
+            if node_id in visited:
+                return []
 
-            # If direction is True, traverse to the 'to' node
-            if down:
-                if relationship['from_document']['document_id'] == document_id:
-                    related_node_ids.append(related_document_id)
-                    related_node_ids += self.get_related_nodes(related_document_id, down, visited)
-            # If direction is False, traverse to the 'from' node
-            else:
-                if relationship['to_document']['document_id'] == document_id:
-                    related_node_ids.append(related_document_id)
-                    related_node_ids += self.get_related_nodes(related_document_id, down, visited)
+            # Add the node to the set of visited nodes
+            visited.add(node_id)
 
-        return related_node_ids
+            # Get the data object by its ID
+            result = self.client.data_object.get_by_id(node_id, class_name=WEAVIATE_CLASS)
 
+            # Get the related objects
+            related_objects = result['properties']['relationships']
+
+            # Initialize the list of related node IDs
+            related_node_ids = []
+
+            # Recursively traverse the graph
+            for relationship in related_objects:
+                # Get the ID of the related document
+                related_document_id = relationship['beacon'].split('/')[-1]
+
+                # If direction is True, traverse to the 'to' node
+                if down:
+                    if relationship['from_document']['document_id'] == document_id:
+                        related_node_ids.append(related_document_id)
+                        related_node_ids += self.get_related_nodes(related_document_id, down, visited)
+                # If direction is False, traverse to the 'from' node
+                else:
+                    if relationship['to_document']['document_id'] == document_id:
+                        related_node_ids.append(related_document_id)
+                        related_node_ids += self.get_related_nodes(related_document_id, down, visited)
+
+            return related_node_ids
+        
+        except Exception as e:
+            logger.error(f"Failed to get_related_nodes for document_id={document_id}, down={down}:\n {e}", exc_info=True)
+            raise
 
     
     @staticmethod
