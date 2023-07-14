@@ -239,8 +239,12 @@ class WeaviateDataStore(DataStore):
                 for doc_id, doc_chunks in chunks.items():
                     logger.debug(f"Upserting {doc_id} with {len(doc_chunks)} chunks")
                     for doc_chunk in doc_chunks:
-                        if  doc_chunk.metadata and doc_chunk.metadata.index:
-                            j = doc_chunk.metadata.index + 1 
+                        if doc_chunk.metadata:
+                            if not doc_chunk.metadata.index:
+                                j = 0
+                            else:
+                                j = doc_chunk.metadata.index + 1 
+                                
                             logger.debug(f"...batching chunk {j} of {len(doc_chunks)}")
                             self._add_chunk_to_batch(batch, doc_chunk)
                         else:
