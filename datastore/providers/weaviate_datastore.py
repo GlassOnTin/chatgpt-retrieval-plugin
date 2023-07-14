@@ -382,6 +382,7 @@ class WeaviateDataStore(DataStore):
                                         document_id=ref.get("document_id", ""), 
                                         title=ref.get("title", ""),
                                         status=ref.get("status", ""),
+                                        priority=ref.get("priority",""),
                                         relationship=relationship["relationship_type"]
                                     )
                                     if direction == "from_document":

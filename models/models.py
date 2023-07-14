@@ -23,6 +23,7 @@ class DocumentReference(BaseModel):
     document_id: Optional[str] = None
     title: Optional[str] = None
     status: Optional[str] = None
+    priority: Optional[str] = None
     relationship: Optional[str] = None
 
 class DocumentRelationship(BaseModel):
