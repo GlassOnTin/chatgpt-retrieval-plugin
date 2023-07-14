@@ -7,6 +7,7 @@ class DocumentMetadata(BaseModel):
     source: Optional[str] = None
     created_at: Optional[str] = None
     status: Optional[str] = None
+    priority: Optional[str] = None
 
 class DocumentChunkMetadata(DocumentMetadata):
     document_id: Optional[str] = None

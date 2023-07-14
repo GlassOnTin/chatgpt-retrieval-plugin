@@ -1,7 +1,16 @@
-# This is a version of the main.py file found in ../../server/main.py that also gives ChatGPT access to the upsert endpoint
-# (allowing it to save information from the chat back to the vector) database.
-# Copy and paste this into the main file at ../../server/main.py if you choose to give the model access to the upsert endpoint
-# and want to access the openapi.json when you run the app locally at http://0.0.0.0:8000/sub/openapi.json.
+TITLE="GraphVectorMemory"
+DESCRIPTION="""
+This plugin manages documents in a vector database, each with 'text', 
+'metadata' (including 'title', 'type', 'source', 'status', and 'priority'), 
+and a 'document_id'. It supports adding and deleting references between 
+documents to create a well-structured graph for improved query performance. 
+
+The 'priority' property guides attention to more important documents. 
+Start by querying the 'Home' node to understand the core motivations and 
+values guiding all intelligent processes. Then, explore sub-nodes based 
+on individual circumstances and perspectives. This aligns actions with 
+core motivations, fostering purpose and direction.
+"""
 import os
 from typing import Optional
 import json
@@ -45,8 +54,8 @@ app.mount("/.well-known", StaticFiles(directory=".well-known"), name="static")
 
 # Create a sub-application, in order to access a subset of the endpoints in the OpenAPI schema, found at http://0.0.0.0:8000/sub/openapi.json when the app is running locally
 sub_app = FastAPI(
-    title="Graph Memory",
-    description= "This plugin provides functionality to insert, update, or delete documents in a vector database. Each document consists of 'text' and 'metadata', with the latter including 'title', 'type', 'source', and 'status'. Documents are stored as chunks in the database, each with a sequential 'index'. All chunks of a document share a common 'document_id'. To update or delete a document, use the 'document_id'. The plugin also supports adding and deleting references between documents, which represent specific types of relationships. When storing new documents, consider the graph structure and memory engrams. A well-structured graph can improve query performance and the quality of results. For example, related documents can be linked via references, and commonly used information can be stored in separate documents and referenced as needed. The 'index' property can be used to retrieve specific chunks of a document.",
+    title=TITLE,
+    description=DESCRIPTION,
     version="1.0.0",
     servers=[{"url": "https://your-app-url.com"}],
     dependencies=[Depends(validate_token)],
