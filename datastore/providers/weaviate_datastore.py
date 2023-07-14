@@ -82,7 +82,17 @@ SCHEMA = {
         {
             "name": "priority",
             "dataType": ["string"],
-            "description": "The current priority",
+            "description": "The current priority"
+        },
+        {
+            "name": "downcount",
+            "dataType": ["string"],
+            "description": "The total number of nodes below"
+        },
+        {
+            "name": "upcount",
+            "dataType": ["string"],
+            "description": "The path length up to home"
         },
     ],
 }
@@ -243,12 +253,13 @@ class WeaviateDataStore(DataStore):
                             if not doc_chunk.metadata.index:
                                 j = 0
                             else:
-                                j = doc_chunk.metadata.index + 1 
-                                
-                            logger.debug(f"...batching chunk {j} of {len(doc_chunks)}")
+                                j = doc_chunk.metadata.index + 1
+
+                            logger.debug(f"...batching chunk {j+1} of {len(doc_chunks)}")
                             self._add_chunk_to_batch(batch, doc_chunk)
                         else:
-                            logger.error("Metadata missing")                            
+                            logger.error("Metadata missing")
+
                     doc_ids.append(doc_id)
                 batch.flush()
             return doc_ids
@@ -434,7 +445,6 @@ class WeaviateDataStore(DataStore):
             logger.error(f"Failed to process document chunk: {e}", exc_info=True)
             raise
 
-
     async def delete(
         self,
         ids: Optional[List[str]] = None,
@@ -586,7 +596,10 @@ class WeaviateDataStore(DataStore):
     
             # Add a reference from the to_document to the to_relationship_type Relationship object
             self.add_reference_to_relationship(to_chunk_id, to_relationship_id, consistency_level)
-    
+
+            # Update the upcount and downcount of the metadata
+            self.update_counts(from_document_id, to_document_id)
+
             return True
         except Exception as e:
             logger.error(f"Failed to add references between {from_document_id} and {to_document_id}: {e}", exc_info=True)
@@ -704,6 +717,108 @@ class WeaviateDataStore(DataStore):
             logger.error(f"Failed to add reference to relationship: {e}", exc_info=True)
             raise
 
+    def get_from_ancestors(self, document_id, visited=None):
+        return self.get_related_nodes(document_id, down=False, visited=visited)
+
+    def get_to_descendants(self, document_id, visited=None):
+        return self.get_related_nodes(document_id, down=True, visited=visited)
+
+   
+    def update_counts(self, from_document_id, to_document_id, increment=True):
+        # Update the downcount of the 'from' node and all its 'from' ancestors
+        self.update_count(from_document_id, down=True, increment=increment)
+
+        # Update the upcount of the 'to' node and all its 'to' descendants
+        self.update_count(to_document_id, down=False, increment=increment)
+
+    def update_count(self, document_id, down=True, increment=True):
+        # Initialize the set of visited nodes
+        visited = set()
+
+        # Get the Weaviate ID for the document
+        node_id = self.get_chunk_id(document_id)
+
+        # Get the related nodes of the node
+        related_nodes = self.get_related_nodes(document_id, down, visited)
+
+        # Update the count of the node and all its related nodes
+        for related_node_id in related_nodes:
+            # Get the Weaviate ID for the related node
+            related_node_weaviate_id = self.get_chunk_id(related_node_id)
+
+            # Increment or decrement the count of the related node
+            if increment:
+                self.client.data_object.update({ "downcount" if down else "upcount": str(len(related_nodes) + 1) }, related_node_weaviate_id, WEAVIATE_CLASS)
+            else:
+                self.client.data_object.update({ "downcount" if down else "upcount": str(len(related_nodes) - 1) }, related_node_weaviate_id, WEAVIATE_CLASS)
+
+    def get_related_nodes(self, document_id, down=True, visited=None):
+        # Initialize the set of visited nodes if it's not provided
+        if visited is None:
+            visited = set()
+
+        # Get the Weaviate ID for the document
+        node_id = self.get_chunk_id(document_id)
+
+        # If the node has already been visited, return an empty list
+        if node_id in visited:
+            return []
+
+        # Add the node to the set of visited nodes
+        visited.add(node_id)
+
+        # Define the GraphQL query
+        query = f"""
+        {{
+        Get {{
+            Things {{
+            {WEAVIATE_CLASS}(id: "{node_id}") {{
+                id
+                relationships {{
+                ... on {WEAVIATE_RELATIONSHIP_CLASS} {{
+                    from_document {{
+                    ... on {WEAVIATE_CLASS} {{
+                        document_id
+                    }}
+                    }}
+                    to_document {{
+                    ... on {WEAVIATE_CLASS} {{
+                        document_id
+                    }}
+                    }}
+                }}
+                }}
+            }}
+            }}
+        }}
+        }}
+        """
+
+        # Execute the query
+        result = self.client.execute(query)
+
+        # Get the related objects
+        related_objects = result['data']['Get']['Things'][WEAVIATE_CLASS][0]['relationships']
+
+        # Initialize the list of related node IDs
+        related_node_ids = []
+
+        # Recursively traverse the graph
+        for relationship in related_objects:
+            # If direction is True, traverse to the 'to' node
+            if down:
+                if relationship['from_document']['document_id'] == document_id:
+                    related_node_ids.append(relationship['to_document']['document_id'])
+                    related_node_ids += self.get_related_nodes(relationship['to_document']['document_id'], down, visited)
+            # If direction is False, traverse to the 'from' node
+            else:
+                if relationship['to_document']['document_id'] == document_id:
+                    related_node_ids.append(relationship['from_document']['document_id'])
+                    related_node_ids += self.get_related_nodes(relationship['from_document']['document_id'], down, visited)
+
+        return related_node_ids
+
+    
     @staticmethod
     def _is_valid_weaviate_id(candidate_id: str) -> bool:
         """

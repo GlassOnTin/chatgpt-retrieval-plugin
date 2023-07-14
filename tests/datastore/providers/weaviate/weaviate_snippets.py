@@ -15,8 +15,8 @@ WEAVIATE_RELATIONSHIP_CLASS = "OpenAIRelationship"
 print(json.dumps(client.schema.get(), indent=4))
 
 # Get OpenAIDocument schema
-#openai_class = client.schema.get(WEAVIATE_CLASS)["properties"]
-#print(json.dumps(openai_class, indent=4))
+openai_class = client.schema.get(WEAVIATE_CLASS)["properties"]
+print(json.dumps(openai_class, indent=4))
 
 # Get all documents
 data = client.data_object.get(); print(json.dumps(data, indent=4))
