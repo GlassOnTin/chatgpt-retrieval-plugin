@@ -170,15 +170,21 @@ class WeaviateDataStore(DataStore):
                 raise   
         else:
             try:
-                logger.debug(
-                    f"Updating class {class_name} with schema {schema}"
-                )
                 new_properties = {property["name"]: property for property in schema["properties"]}
                 existing_properties = {property["name"]: property for property in existing_schema["properties"]}
 
-                for property_name, property_schema in new_properties.items():
-                    if property_name not in existing_properties:
-                        self.client.schema.property.create(class_name, property_schema)
+                if len(new_properties) > len(existing_properties):
+                    logger.debug(
+                        f"Updating class {class_name} with schema {schema}"
+                    )
+                    for property_name, property_schema in new_properties.items():
+                        if property_name not in existing_properties:
+                            self.client.schema.property.create(class_name, property_schema)
+                
+                elif len(new_properties) < len(existing_properties):
+                    logger.error(
+                        f"Cannot remove properties from class {class_name}"
+                    )
 
             except Exception as e:
                 logger.error(f"Failed to update weaviate class {class_name}: {e}")
