@@ -8,6 +8,8 @@ class DocumentMetadata(BaseModel):
     created_at: Optional[str] = None
     status: Optional[str] = None
     priority: Optional[str] = None
+    upcount: Optional[str] = None
+    downcount: Optional[str] = None
 
 class DocumentChunkMetadata(DocumentMetadata):
     document_id: Optional[str] = None
@@ -24,6 +26,8 @@ class DocumentReference(BaseModel):
     title: Optional[str] = None
     status: Optional[str] = None
     priority: Optional[str] = None
+    upcount: Optional[str] = None
+    downcount: Optional[str] = None
     relationship: Optional[str] = None
 
 class DocumentRelationship(BaseModel):
