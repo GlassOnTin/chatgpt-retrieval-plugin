@@ -836,75 +836,66 @@ class WeaviateDataStore(DataStore):
             )
             raise
 
-    def get_related_nodes(self, document_id, down=True, visited=None):
-        try:
-            # Initialize the set of visited nodes if it's not provided
-            if visited is None:
-                visited = set()
-
-            # Get the Weaviate ID for the document
-            node_id = self.get_chunk_id(document_id)
-
-            # If the node has already been visited, return an empty list
-            if node_id in visited:
-                return []
-
-            # Add the node to the set of visited nodes
-            visited.add(node_id)
-
-            # Get the data object by its ID
-            result = self.client.data_object.get_by_id(
-                node_id, class_name=WEAVIATE_CLASS
-            )
-            
-            logger.info(f"get_related_nodes result: {result}")
-
-            # Get the related objects
-            related_objects = result["properties"]["relationships"]
-
-            # Initialize the list of related node IDs
-            related_node_ids = []
-
-            # Recursively traverse the graph
-            for relationship in related_objects:
-                # Get the ID of the related document
-                related_document_id = relationship["beacon"].split("/")[-1]
-
-                result = self.client.data_object.get_by_id(
-                    related_document_id, class_name="OpenAIRelationship"
-                )
-                
-                if "properties" in result:
-                   related_objects = result["properties"]["relationships"]
-                else:
-                   return []
-
-                # Fetch the details of the OpenAIRelationship document
-                relationship_details = result["properties"]["relationships"]
-
-                # If direction is True, traverse to the 'to' node
-                if down and "from_document" in relationship_details:
-                    if relationship_details["from_document"]["document_id"] == document_id:
-                        related_node_ids.append(related_document_id)
-                        related_node_ids += self.get_related_nodes(
-                            related_document_id, down, visited
-                        )
-                # If direction is False, traverse to the 'from' node
-                elif "to_document" in relationship_details:
-                    if relationship_details["to_document"]["document_id"] == document_id:
-                        related_node_ids.append(related_document_id)
-                        related_node_ids += self.get_related_nodes(
-                            related_document_id, down, visited
-                        )
-
-            return related_node_ids
-
-        except Exception as e:
-            logger.error(
-                f"Failed to get_related_nodes for document_id={document_id}, down={down}: {e}",
-                exc_info=True,
-            )
-            raise
+     def get_related_nodes(self, document_id, down=True, visited=None):
+    
+      relationship_class = SCHEMA_RELATIONSHIP['class']
+      relationship_properties = [p['name'] for p in SCHEMA_RELATIONSHIP['properties']]
+    
+      try:
+        # Get node 
+        node_id = self.get_chunk_id(document_id)
+    
+        # Check visited
+        if node_id in visited:
+          return []
+        
+        # Mark visited
+        visited.add(node_id)
+    
+        # Get node object
+        result = self.client.data_object.get_by_id(node_id, WEAVIATE_CLASS)
+    
+        # Validate result matches schema
+        if set(result.keys()) != {'class', 'creationTimeUnix', 'id', 'lastUpdateTimeUnix', 'properties', 'vectorWeights'}:
+          logger.warning(f"Unexpected result structure: {result}")
+          return []
+    
+        # Get relationships
+        if 'properties' in result:
+          relationships = result['properties'].get('relationships', [])
+        else:
+          logger.warning(f"Missing expected properties: {result}")
+          return []
+    
+        # Traverse relationships
+        related_ids = []
+        for relationship in relationships:
+    
+          # Validate relationship object
+          if set(relationship.keys()) != set(relationship_properties):
+            logger.warning(f"Invalid relationship: {relationship}")
+            continue
+    
+          # Get relationship type 
+          rel_type = relationship.get('relationship_type')
+    
+          # Follow "to" references
+          if down and 'to_document' in relationship:
+            if relationship['to_document'].get('document_id') == document_id:
+              related_ids.append(relationship['id']) 
+              related_ids.extend(self.get_related_nodes(relationship['id'], down, visited))
+    
+          # Follow "from" references  
+          elif 'from_document' in relationship:
+            if relationship['from_document'].get('document_id') == document_id:
+              related_ids.append(relationship['id'])
+              related_ids.extend(self.get_related_nodes(relationship['id'], down, visited))
+    
+        return related_ids
+      
+      except Exception as e:
+        logger.error(f"Failed to get related nodes: {e}")
+        raise
 
     @staticmethod
     def _is_valid_weaviate_id(candidate_id: str) -> bool:
