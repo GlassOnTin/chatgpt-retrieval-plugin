@@ -751,7 +751,7 @@ class WeaviateDataStore(DataStore):
                     self.client.data_object.update({ "downcount" if down else "upcount": str(len(related_nodes) - 1) }, related_node_weaviate_id, WEAVIATE_CLASS)
 
         except Exception as e:
-            logger.error(f"Failed to update_count for document_id={document_id}, down={down}, increment={increment}:\n {e}", exc_info=True)
+            logger.error(f"Failed to update_count for document_id={document_id}, down={down}, increment={increment}: {e}", exc_info=True)
             raise
 
     def get_related_nodes(self, document_id, down=True, visited=None):
@@ -798,7 +798,7 @@ class WeaviateDataStore(DataStore):
             return related_node_ids
         
         except Exception as e:
-            logger.error(f"Failed to get_related_nodes for document_id={document_id}, down={down}:\n {e}", exc_info=True)
+            logger.error(f"Failed to get_related_nodes for document_id={document_id}, down={down}: {e}", exc_info=True)
             raise
 
     
