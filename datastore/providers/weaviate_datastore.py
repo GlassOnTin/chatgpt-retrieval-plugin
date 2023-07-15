@@ -775,6 +775,7 @@ class WeaviateDataStore(DataStore):
 
             # Get the related objects
             related_objects = result['properties']['relationships']
+            print(f"related_objects: {related_objects}")
 
             # Initialize the list of related node IDs
             related_node_ids = []
