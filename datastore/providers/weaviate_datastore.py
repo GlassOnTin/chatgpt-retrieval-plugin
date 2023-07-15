@@ -18,7 +18,7 @@ from models.models import (
     DocumentChunkMetadataFilter,
     QueryResult,
     QueryWithEmbedding,
-    DocumentChunkWithScore
+    DocumentChunkWithScore,
 )
 
 
@@ -28,7 +28,9 @@ WEAVIATE_USERNAME = os.environ.get("WEAVIATE_USERNAME", None)
 WEAVIATE_PASSWORD = os.environ.get("WEAVIATE_PASSWORD", None)
 WEAVIATE_SCOPES = os.environ.get("WEAVIATE_SCOPES", "offline_access")
 WEAVIATE_CLASS = os.environ.get("WEAVIATE_CLASS", "OpenAIDocument")
-WEAVIATE_RELATIONSHIP_CLASS = os.environ.get("WEAVIATE_RELATIONSHIP_CLASS", "OpenAIRelationship")
+WEAVIATE_RELATIONSHIP_CLASS = os.environ.get(
+    "WEAVIATE_RELATIONSHIP_CLASS", "OpenAIRelationship"
+)
 
 WEAVIATE_BATCH_SIZE = int(os.environ.get("WEAVIATE_BATCH_SIZE", 20))
 WEAVIATE_BATCH_DYNAMIC = os.environ.get("WEAVIATE_BATCH_DYNAMIC", False)
@@ -82,17 +84,17 @@ SCHEMA = {
         {
             "name": "priority",
             "dataType": ["string"],
-            "description": "The current priority"
+            "description": "The current priority",
         },
         {
             "name": "downcount",
             "dataType": ["string"],
-            "description": "The total number of nodes below"
+            "description": "The total number of nodes below",
         },
         {
             "name": "upcount",
             "dataType": ["string"],
-            "description": "The path length up to home"
+            "description": "The path length up to home",
         },
     ],
 }
@@ -115,9 +117,10 @@ SCHEMA_RELATIONSHIP = {
             "name": "relationship_type",
             "dataType": ["string"],
             "description": "The type of this relationship",
-        }
+        },
     ],
 }
+
 
 class WeaviateDataStore(DataStore):
     def handle_errors(self, results: Optional[List[dict]]) -> List[str]:
@@ -138,7 +141,7 @@ class WeaviateDataStore(DataStore):
 
         return error_messages
 
-    def __init__(self):        
+    def __init__(self):
         auth_credentials = self._build_auth_credentials()
 
         url = f"{WEAVIATE_HOST}:{WEAVIATE_PORT}"
@@ -162,7 +165,7 @@ class WeaviateDataStore(DataStore):
         self._add_relationships_property_to_document_class()
 
     def _create_or_update_class(self, class_name, schema):
-        try:            
+        try:
             existing_schema = self.client.schema.get(class_name)
 
         except Exception as e:
@@ -170,37 +173,36 @@ class WeaviateDataStore(DataStore):
 
         if not existing_schema:
             try:
-                logger.debug(
-                    f"Creating class {class_name} with schema {schema}"
-                )            
+                logger.debug(f"Creating class {class_name} with schema {schema}")
                 self.client.schema.create_class(schema)
 
             except Exception as e:
                 logger.error(f"Failed to create weaviate class {class_name}: {e}")
-                raise   
+                raise
         else:
             try:
-                new_properties = {property["name"]: property for property in schema["properties"]}
-                existing_properties = {property["name"]: property for property in existing_schema["properties"]}
+                new_properties = {
+                    property["name"]: property for property in schema["properties"]
+                }
+                existing_properties = {
+                    property["name"]: property
+                    for property in existing_schema["properties"]
+                }
 
                 if len(new_properties) > len(existing_properties):
-                    logger.debug(
-                        f"Updating class {class_name} with schema {schema}"
-                    )
+                    logger.debug(f"Updating class {class_name} with schema {schema}")
                     for property_name, property_schema in new_properties.items():
                         if property_name not in existing_properties:
-                            self.client.schema.property.create(class_name, property_schema)
-                
+                            self.client.schema.property.create(
+                                class_name, property_schema
+                            )
+
                 elif len(new_properties) < len(existing_properties):
-                    logger.error(
-                        f"Cannot remove properties from class {class_name}"
-                    )
+                    logger.error(f"Cannot remove properties from class {class_name}")
 
             except Exception as e:
                 logger.error(f"Failed to update weaviate class {class_name}: {e}")
                 raise
-
-
 
     def _add_relationships_property_to_document_class(self):
         relationships_property = {
@@ -212,24 +214,28 @@ class WeaviateDataStore(DataStore):
         logger.debug(
             f"Adding relationships property to collection {WEAVIATE_CLASS} with properties {relationships_property}"
         )
-        
-        try: 
+
+        try:
             # Get the schema of the OpenAIDocument class
             schema = self.client.schema.get(WEAVIATE_CLASS)
 
         except Exception as e:
-            logger.debug(f"Failed to get {WEAVIATE_CLASS}")  
-            raise 
+            logger.debug(f"Failed to get {WEAVIATE_CLASS}")
+            raise
 
         # Check if the 'relationships' property already exists
         try:
-            if not any(prop for prop in schema["properties"] if prop["name"] == "relationships"):
+            if not any(
+                prop for prop in schema["properties"] if prop["name"] == "relationships"
+            ):
                 # If the property doesn't exist, add it
-                self.client.schema.property.create(WEAVIATE_CLASS, relationships_property)
-        
+                self.client.schema.property.create(
+                    WEAVIATE_CLASS, relationships_property
+                )
+
         except Exception as e:
-            logger.debug(f"Failed to add relationships property to {WEAVIATE_CLASS}")  
-            raise 
+            logger.debug(f"Failed to add relationships property to {WEAVIATE_CLASS}")
+            raise
 
     @staticmethod
     def _build_auth_credentials():
@@ -241,10 +247,9 @@ class WeaviateDataStore(DataStore):
             return None
 
     async def _upsert(self, chunks: Dict[str, List[DocumentChunk]]) -> List[str]:
-        
-        try:  
+        try:
             doc_ids = []
-    
+
             with self.client.batch as batch:
                 for doc_id, doc_chunks in chunks.items():
                     logger.debug(f"Upserting {doc_id} with {len(doc_chunks)} chunks")
@@ -255,7 +260,9 @@ class WeaviateDataStore(DataStore):
                             else:
                                 j = doc_chunk.metadata.index + 1
 
-                            logger.debug(f"...batching chunk {j+1} of {len(doc_chunks)}")
+                            logger.debug(
+                                f"...batching chunk {j+1} of {len(doc_chunks)}"
+                            )
                             self._add_chunk_to_batch(batch, doc_chunk)
                         else:
                             logger.error("Metadata missing")
@@ -263,14 +270,14 @@ class WeaviateDataStore(DataStore):
                     doc_ids.append(doc_id)
                 batch.flush()
             return doc_ids
-        
+
         except Exception as e:
             logger.error(f"Error with upsert: {e}", exc=True)
             raise
 
     def _add_chunk_to_batch(self, batch, doc_chunk: DocumentChunk):
         chunk_uuid = generate_uuid5(doc_chunk, WEAVIATE_CLASS)
-                
+
         doc_chunk_dict = doc_chunk.dict()
 
         # Remove the metadata section and store this flat in the schema class
@@ -278,114 +285,134 @@ class WeaviateDataStore(DataStore):
         for key, value in metadata.items():
             doc_chunk_dict[key] = value
 
-        # Add the relationships            
+        # Add the relationships
         doc_chunk_dict["relationships"] = (
             doc_chunk_dict.pop("relationships")
             if doc_chunk_dict["relationships"]
             else None
         )
-        
+
         # Set the created_at to current time
-        doc_chunk_dict['created_at'] = datetime.datetime.now(datetime.timezone.utc).isoformat()
-        
+        doc_chunk_dict["created_at"] = datetime.datetime.now(
+            datetime.timezone.utc
+        ).isoformat()
+
         # Extract the embedding vector
         embedding = doc_chunk_dict.pop("embedding")
-        
+
         batch.add_data_object(
             uuid=chunk_uuid,
             data_object=doc_chunk_dict,
             class_name=WEAVIATE_CLASS,
             vector=embedding,
         )
-           
+
     async def _query_seq(self, queries: List[QueryWithEmbedding]) -> List[QueryResult]:
-        try:            
+        try:
             results = []
             for query in queries:
                 result = await self._single_query(query)
                 results.append(result)
-                
+
             return results
-        
+
         except Exception as e:
             logger.error(f"Error with query: {e}", exc=True)
             raise
 
     async def _query(self, queries: List[QueryWithEmbedding]) -> List[QueryResult]:
-    
-        return await asyncio.gather(*[self._single_query(query) for query in queries])            
+        return await asyncio.gather(*[self._single_query(query) for query in queries])
 
     async def _single_query(self, query: QueryWithEmbedding) -> QueryResult:
-            
         try:
             result = self._execute_query(query)
-                
+
             query_results = self._process_response(result)
-            
+
             logger.info(f"query_results: {query_results}")
-            
+
             return QueryResult(query=query.query, results=query_results)
-        
+
         except Exception as e:
             logger.error(f"Error with _single_query: {e}", exc=True)
             raise
 
-
     def _execute_query(self, query: QueryWithEmbedding):
         try:
-            filters_ = self.build_filters(query.filter) if hasattr(query, "filter") and query.filter else None
-            
-            query_builder = self.client.query\
-                .get(WEAVIATE_CLASS, self._get_fields(SCHEMA, SCHEMA_RELATIONSHIP)) \
-                .with_limit(query.top_k) \
-                .with_additional(["id","score"])
+            filters_ = (
+                self.build_filters(query.filter)
+                if hasattr(query, "filter") and query.filter
+                else None
+            )
+
+            query_builder = (
+                self.client.query.get(
+                    WEAVIATE_CLASS, self._get_fields(SCHEMA, SCHEMA_RELATIONSHIP)
+                )
+                .with_limit(query.top_k)
+                .with_additional(["id", "score"])
+            )
 
             if query.query and query.embedding:
-                query_builder = query_builder.with_hybrid(query=query.query, alpha=0.5, vector=query.embedding)
+                query_builder = query_builder.with_hybrid(
+                    query=query.query, alpha=0.5, vector=query.embedding
+                )
 
             if filters_:
                 query_builder = query_builder.with_where(filters_)
-                
+
             return query_builder.do()
-            
+
         except Exception as e:
             logger.error(f"Failed to execute_query {query}: {e}", exc_info=True)
             raise
-        
+
     def _get_fields(self, schema, relationship_schema):
         fields = []
-        for property in schema['properties']:
-            fields.append(property['name'])
+        for property in schema["properties"]:
+            fields.append(property["name"])
 
         relationship_fields = []
-        for property in relationship_schema['properties']:
-            if property['dataType'][0] == schema['class']:
-                relationship_fields.append(f"{property['name']} {{ ... on {schema['class']} {{ document_id, title }} }}")
+        for property in relationship_schema["properties"]:
+            if property["dataType"][0] == schema["class"]:
+                relationship_fields.append(
+                    f"{property['name']} {{ ... on {schema['class']} {{ document_id, title }} }}"
+                )
             else:
-                relationship_fields.append(property['name'])
+                relationship_fields.append(property["name"])
 
-        fields.append(f"relationships {{ ... on {relationship_schema['class']} {{ {', '.join(relationship_fields)} }} }}")
+        fields.append(
+            f"relationships {{ ... on {relationship_schema['class']} {{ {', '.join(relationship_fields)} }} }}"
+        )
         return fields
-        
+
     def _process_response(self, result):
         try:
             logger.info(f"_process_response{result}")
-            
-            if "data" in result and "Get" in result["data"] and WEAVIATE_CLASS in result["data"]["Get"]:
+
+            if (
+                "data" in result
+                and "Get" in result["data"]
+                and WEAVIATE_CLASS in result["data"]["Get"]
+            ):
                 response = result["data"]["Get"][WEAVIATE_CLASS]
                 if response is None:
                     logger.error(f"Response is None: {result}")
                     return []
                 else:
-                    return [self._process_document_chunk(resp) for resp in response if resp is not None]
+                    return [
+                        self._process_document_chunk(resp)
+                        for resp in response
+                        if resp is not None
+                    ]
             else:
                 logger.error(f"Expected keys not found in result: {result}")
                 return []
-                
+
         except Exception as e:
             logger.error(f"Failed to process response: {e}", exc_info=True)
             raise
-        
+
     def _process_document_chunk(self, resp):
         try:
             logger.info(f"_process_document_chunk{resp}")
@@ -400,11 +427,11 @@ class WeaviateDataStore(DataStore):
                             for ref in doc:
                                 if ref is not None:
                                     doc_ref = DocumentReference(
-                                        document_id=ref.get("document_id", ""), 
+                                        document_id=ref.get("document_id", ""),
                                         title=ref.get("title", ""),
                                         status=ref.get("status", ""),
-                                        priority=ref.get("priority",""),
-                                        relationship=relationship["relationship_type"]
+                                        priority=ref.get("priority", ""),
+                                        relationship=relationship["relationship_type"],
                                     )
                                     if direction == "from_document":
                                         from_documents.append(doc_ref)
@@ -431,10 +458,9 @@ class WeaviateDataStore(DataStore):
                 text=resp["text"],
                 score=score,
                 metadata=metadata,
-                relationships= DocumentRelationship(
-                    from_documents=from_documents,
-                    to_documents=to_documents
-                )
+                relationships=DocumentRelationship(
+                    from_documents=from_documents, to_documents=to_documents
+                ),
             )
 
             logger.debug(f"doc_chunk={doc_chunk}")
@@ -466,7 +492,9 @@ class WeaviateDataStore(DataStore):
             return True
 
         if ids is None and filter is None and not delete_all:
-            logger.error("No ids or filter provided for deletion and delete_all is not set. Aborting.")
+            logger.error(
+                "No ids or filter provided for deletion and delete_all is not set. Aborting."
+            )
             return False
 
         if ids:
@@ -537,11 +565,11 @@ class WeaviateDataStore(DataStore):
             "start_date": {"operator": "GreaterThanEqual", "value_key": "valueDate"},
             "end_date": {"operator": "LessThanEqual", "value_key": "valueDate"},
             "index": {"operator": "Equal", "value_key": "valueInt"},
-            "default": {"operator": "Equal", "value_key": "valueString"}
+            "default": {"operator": "Equal", "value_key": "valueString"},
         }
-        
+
         print(f"filter: {filter}")
-        
+
         for attr, value in filter.__dict__.items():
             if value is not None:
                 filter_condition = filter_conditions.get(
@@ -556,7 +584,7 @@ class WeaviateDataStore(DataStore):
                         else "created_at"
                     ],
                     "operator": filter_condition["operator"],
-                    value_key: value
+                    value_key: value,
                 }
 
                 logger.debug(f"Operand: {operand}")
@@ -579,32 +607,45 @@ class WeaviateDataStore(DataStore):
         """
         Adds a two-way cross-reference between two documents properties
         """
-        logger.debug(f"Adding references between {from_document_id} and {to_document_id}")
+        logger.debug(
+            f"Adding references between {from_document_id} and {to_document_id}"
+        )
         try:
             # Get the chunk IDs for the from_document and to_document
             from_chunk_id = self.get_chunk_id(from_document_id)
             to_chunk_id = self.get_chunk_id(to_document_id)
-    
+
             # Create a Relationship object for the from_relationship_type
-            from_relationship_id = self.create_relationship(from_chunk_id, to_chunk_id, from_relationship_type)
-    
+            from_relationship_id = self.create_relationship(
+                from_chunk_id, to_chunk_id, from_relationship_type
+            )
+
             # Create a Relationship object for the to_relationship_type
-            to_relationship_id = self.create_relationship(from_chunk_id, to_chunk_id, to_relationship_type)
-    
+            to_relationship_id = self.create_relationship(
+                from_chunk_id, to_chunk_id, to_relationship_type
+            )
+
             # Add a reference from the from_document to the from_relationship_type Relationship object
-            self.add_reference_to_relationship(from_chunk_id, from_relationship_id, consistency_level)
-    
+            self.add_reference_to_relationship(
+                from_chunk_id, from_relationship_id, consistency_level
+            )
+
             # Add a reference from the to_document to the to_relationship_type Relationship object
-            self.add_reference_to_relationship(to_chunk_id, to_relationship_id, consistency_level)
+            self.add_reference_to_relationship(
+                to_chunk_id, to_relationship_id, consistency_level
+            )
 
             # Update the upcount and downcount of the metadata
             self.update_counts(from_document_id, to_document_id)
 
             return True
         except Exception as e:
-            logger.error(f"Failed to add references between {from_document_id} and {to_document_id}: {e}", exc_info=True)
+            logger.error(
+                f"Failed to add references between {from_document_id} and {to_document_id}: {e}",
+                exc_info=True,
+            )
             return False
-    
+
     async def delete_reference(
         self,
         from_document_id: str,
@@ -614,12 +655,14 @@ class WeaviateDataStore(DataStore):
         """
         Deletes a two-way cross-reference between two documents properties
         """
-        logger.debug(f"Deleting references between {from_document_id} and {to_document_id}")
+        logger.debug(
+            f"Deleting references between {from_document_id} and {to_document_id}"
+        )
         try:
             # Get the chunk IDs for the from_document and to_document
             from_chunk_id = self.get_chunk_id(from_document_id)
             to_chunk_id = self.get_chunk_id(to_document_id)
-    
+
             # Delete the reference from the from_document to the to_document
             self.client.data_object.reference.delete(
                 from_uuid=from_chunk_id,
@@ -627,9 +670,9 @@ class WeaviateDataStore(DataStore):
                 to_uuid=to_chunk_id,
                 from_class_name=WEAVIATE_CLASS,
                 to_class_name=WEAVIATE_RELATIONSHIP_CLASS,
-                consistency_level=consistency_level
+                consistency_level=consistency_level,
             )
-    
+
             # Delete the reference from the to_document to the from_document
             self.client.data_object.reference.delete(
                 from_uuid=to_chunk_id,
@@ -637,12 +680,15 @@ class WeaviateDataStore(DataStore):
                 to_uuid=from_chunk_id,
                 from_class_name=WEAVIATE_CLASS,
                 to_class_name=WEAVIATE_RELATIONSHIP_CLASS,
-                consistency_level=consistency_level
+                consistency_level=consistency_level,
             )
-    
+
             return True
         except Exception as e:
-            logger.error(f"Failed to delete references between {from_document_id} and {to_document_id}: {e}", exc_info=True)
+            logger.error(
+                f"Failed to delete references between {from_document_id} and {to_document_id}: {e}",
+                exc_info=True,
+            )
             return False
 
     def get_chunk_id(self, document_id: str) -> str:
@@ -651,56 +697,74 @@ class WeaviateDataStore(DataStore):
         """
         if not document_id:
             raise ValueError("Document ID cannot be empty")
-    
+
         try:
             # Build the filter for the document
-            document_filter = self.build_filters(DocumentChunkMetadataFilter(document_id=document_id, index=0))
-    
+            document_filter = self.build_filters(
+                DocumentChunkMetadataFilter(document_id=document_id, index=0)
+            )
+
             # Get the first chunk for the document
-            document_chunk = self.client.query.get(WEAVIATE_CLASS)\
-                .with_where(document_filter)\
-                .with_additional(["id"])\
+            document_chunk = (
+                self.client.query.get(WEAVIATE_CLASS)
+                .with_where(document_filter)
+                .with_additional(["id"])
                 .do()
-    
+            )
+
             # Check if the response is empty or not
-            if not document_chunk['data']['Get']['OpenAIDocument']:
+            if not document_chunk["data"]["Get"]["OpenAIDocument"]:
                 raise ValueError(f"No document found with ID {document_id}")
-    
+
             # Extract the 'id' from the '_additional' field of the response
-            chunk_id = document_chunk['data']['Get']['OpenAIDocument'][0]['_additional']['id']
-    
+            chunk_id = document_chunk["data"]["Get"]["OpenAIDocument"][0][
+                "_additional"
+            ]["id"]
+
             return chunk_id
         except (KeyError, IndexError) as e:
-            logger.error(f"Failed to get chunk ID for {document_id} due to {e.__class__.__name__}: {e}. Document chunk: {document_chunk}", exc_info=True)
+            logger.error(
+                f"Failed to get chunk ID for {document_id} due to {e.__class__.__name__}: {e}. Document chunk: {document_chunk}",
+                exc_info=True,
+            )
             raise
         except Exception as e:
-            logger.error(f"Failed to get chunk ID for {document_id}: {e}", exc_info=True)
+            logger.error(
+                f"Failed to get chunk ID for {document_id}: {e}", exc_info=True
+            )
             raise
 
-    def create_relationship(self, from_chunk_id: str, to_chunk_id: str, relationship_type: str) -> str:
+    def create_relationship(
+        self, from_chunk_id: str, to_chunk_id: str, relationship_type: str
+    ) -> str:
         """
         Create a Relationship object
         """
         try:
             relationship_id = self.client.data_object.create(
                 {
-                    "from_document": [{
-                        "beacon": f"weaviate://localhost/{from_chunk_id}"
-                    }],
-                    "to_document": [{
-                        "beacon": f"weaviate://localhost/{to_chunk_id}"
-                    }],
-                    "relationship_type": relationship_type
-                }, 
-                WEAVIATE_RELATIONSHIP_CLASS
+                    "from_document": [
+                        {"beacon": f"weaviate://localhost/{from_chunk_id}"}
+                    ],
+                    "to_document": [{"beacon": f"weaviate://localhost/{to_chunk_id}"}],
+                    "relationship_type": relationship_type,
+                },
+                WEAVIATE_RELATIONSHIP_CLASS,
             )
-    
+
             return relationship_id
         except Exception as e:
-            logger.error(f"Failed to create relationship data object: {e}", exc_info=True)
+            logger.error(
+                f"Failed to create relationship data object: {e}", exc_info=True
+            )
             raise
-    
-    def add_reference_to_relationship(self, chunk_id: str, relationship_id: str, consistency_level: weaviate.data.replication.ConsistencyLevel) -> None:
+
+    def add_reference_to_relationship(
+        self,
+        chunk_id: str,
+        relationship_id: str,
+        consistency_level: weaviate.data.replication.ConsistencyLevel,
+    ) -> None:
         """
         Add a reference from a document to a Relationship object
         """
@@ -711,7 +775,7 @@ class WeaviateDataStore(DataStore):
                 to_uuid=relationship_id,
                 from_class_name=WEAVIATE_CLASS,
                 to_class_name=WEAVIATE_RELATIONSHIP_CLASS,
-                consistency_level=consistency_level
+                consistency_level=consistency_level,
             )
         except Exception as e:
             logger.error(f"Failed to add reference to relationship: {e}", exc_info=True)
@@ -723,7 +787,6 @@ class WeaviateDataStore(DataStore):
     def get_to_descendants(self, document_id, visited=None):
         return self.get_related_nodes(document_id, down=True, visited=visited)
 
-   
     def update_counts(self, from_document_id, to_document_id, increment=True):
         # Update the downcount of the 'from' node and all its 'from' ancestors
         self.update_count(from_document_id, down=True, increment=increment)
@@ -746,66 +809,103 @@ class WeaviateDataStore(DataStore):
 
                 # Increment or decrement the count of the related node
                 if increment:
-                    self.client.data_object.update({ "downcount" if down else "upcount": str(len(related_nodes) + 1) }, related_node_weaviate_id, WEAVIATE_CLASS)
+                    self.client.data_object.update(
+                        {
+                            "downcount"
+                            if down
+                            else "upcount": str(len(related_nodes) + 1)
+                        },
+                        related_node_weaviate_id,
+                        WEAVIATE_CLASS,
+                    )
                 else:
-                    self.client.data_object.update({ "downcount" if down else "upcount": str(len(related_nodes) - 1) }, related_node_weaviate_id, WEAVIATE_CLASS)
+                    self.client.data_object.update(
+                        {
+                            "downcount"
+                            if down
+                            else "upcount": str(len(related_nodes) - 1)
+                        },
+                        related_node_weaviate_id,
+                        WEAVIATE_CLASS,
+                    )
 
         except Exception as e:
-            logger.error(f"Failed to update_count for document_id={document_id}, down={down}, increment={increment}: {e}", exc_info=True)
+            logger.error(
+                f"Failed to update_count for document_id={document_id}, down={down}, increment={increment}: {e}",
+                exc_info=True,
+            )
             raise
-    
+
     def get_related_nodes(self, document_id, down=True, visited=None):
         try:
             # Initialize the set of visited nodes if it's not provided
             if visited is None:
                 visited = set()
-    
+
             # Get the Weaviate ID for the document
             node_id = self.get_chunk_id(document_id)
-    
+
             # If the node has already been visited, return an empty list
             if node_id in visited:
                 return []
-    
+
             # Add the node to the set of visited nodes
             visited.add(node_id)
-    
+
             # Get the data object by its ID
-            result = self.client.data_object.get_by_id(node_id, class_name=WEAVIATE_CLASS)
-    
+            result = self.client.data_object.get_by_id(
+                node_id, class_name=WEAVIATE_CLASS
+            )
+            
+            logger.info(f"get_related_nodes result: {result}")
+
             # Get the related objects
-            related_objects = result['properties']['relationships']
-    
+            related_objects = result["properties"]["relationships"]
+
             # Initialize the list of related node IDs
             related_node_ids = []
-    
+
             # Recursively traverse the graph
             for relationship in related_objects:
                 # Get the ID of the related document
-                related_document_id = relationship['beacon'].split('/')[-1]
-    
-                result = self.client.data_object.get_by_id(related_document_id, class_name="OpenAIRelationship")
-                
+                related_document_id = relationship["beacon"].split("/")[-1]
+
+                result = self.client.data_object.get_by_id(
+                    related_document_id, class_name="OpenAIRelationship"
+                )
+
                 # Fetch the details of the OpenAIRelationship document
-                relationship_details = result['properties']['relationships']
-    
+                relationship_details = result["properties"]["relationships"]
+
                 # If direction is True, traverse to the 'to' node
                 if down:
-                    if relationship_details['from_document']['document_id'] == document_id:
+                    if (
+                        relationship_details["from_document"]["document_id"]
+                        == document_id
+                    ):
                         related_node_ids.append(related_document_id)
-                        related_node_ids += self.get_related_nodes(related_document_id, down, visited)
+                        related_node_ids += self.get_related_nodes(
+                            related_document_id, down, visited
+                        )
                 # If direction is False, traverse to the 'from' node
                 else:
-                    if relationship_details['to_document']['document_id'] == document_id:
+                    if (
+                        relationship_details["to_document"]["document_id"]
+                        == document_id
+                    ):
                         related_node_ids.append(related_document_id)
-                        related_node_ids += self.get_related_nodes(related_document_id, down, visited)
-    
-            return related_node_ids
-    
-        except Exception as e:
-            logger.error(f"Failed to get_related_nodes for document_id={document_id}, down={down}: {e}", exc_info=True)
-            raise
+                        related_node_ids += self.get_related_nodes(
+                            related_document_id, down, visited
+                        )
 
+            return related_node_ids
+
+        except Exception as e:
+            logger.error(
+                f"Failed to get_related_nodes for document_id={document_id}, down={down}: {e}",
+                exc_info=True,
+            )
+            raise
 
     @staticmethod
     def _is_valid_weaviate_id(candidate_id: str) -> bool:
