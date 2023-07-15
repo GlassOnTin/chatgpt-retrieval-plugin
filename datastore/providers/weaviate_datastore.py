@@ -873,26 +873,25 @@ class WeaviateDataStore(DataStore):
                 result = self.client.data_object.get_by_id(
                     related_document_id, class_name="OpenAIRelationship"
                 )
+                
+                if "properties" in result:
+                   related_objects = result["properties"]["relationships"]
+                else:
+                   return []
 
                 # Fetch the details of the OpenAIRelationship document
                 relationship_details = result["properties"]["relationships"]
 
                 # If direction is True, traverse to the 'to' node
-                if down:
-                    if (
-                        relationship_details["from_document"]["document_id"]
-                        == document_id
-                    ):
+                if down and "from_document" in relationship_details:
+                    if relationship_details["from_document"]["document_id"] == document_id:
                         related_node_ids.append(related_document_id)
                         related_node_ids += self.get_related_nodes(
                             related_document_id, down, visited
                         )
                 # If direction is False, traverse to the 'from' node
-                else:
-                    if (
-                        relationship_details["to_document"]["document_id"]
-                        == document_id
-                    ):
+                elif "to_document" in relationship_details:
+                    if relationship_details["to_document"]["document_id"] == document_id:
                         related_node_ids.append(related_document_id)
                         related_node_ids += self.get_related_nodes(
                             related_document_id, down, visited
