@@ -753,56 +753,60 @@ class WeaviateDataStore(DataStore):
         except Exception as e:
             logger.error(f"Failed to update_count for document_id={document_id}, down={down}, increment={increment}: {e}", exc_info=True)
             raise
-
+    
     def get_related_nodes(self, document_id, down=True, visited=None):
         try:
             # Initialize the set of visited nodes if it's not provided
             if visited is None:
                 visited = set()
-
+    
             # Get the Weaviate ID for the document
             node_id = self.get_chunk_id(document_id)
-
+    
             # If the node has already been visited, return an empty list
             if node_id in visited:
                 return []
-
+    
             # Add the node to the set of visited nodes
             visited.add(node_id)
-
+    
             # Get the data object by its ID
             result = self.client.data_object.get_by_id(node_id, class_name=WEAVIATE_CLASS)
-
+    
             # Get the related objects
             related_objects = result['properties']['relationships']
-            print(f"related_objects: {related_objects}")
-
+    
             # Initialize the list of related node IDs
             related_node_ids = []
-
+    
             # Recursively traverse the graph
             for relationship in related_objects:
                 # Get the ID of the related document
                 related_document_id = relationship['beacon'].split('/')[-1]
-
+    
+                result = self.client.data_object.get_by_id(related_document_id, class_name="OpenAIRelationship")
+                
+                # Fetch the details of the OpenAIRelationship document
+                relationship_details = result['properties']['relationships']
+    
                 # If direction is True, traverse to the 'to' node
                 if down:
-                    if relationship['from_document']['document_id'] == document_id:
+                    if relationship_details['from_document']['document_id'] == document_id:
                         related_node_ids.append(related_document_id)
                         related_node_ids += self.get_related_nodes(related_document_id, down, visited)
                 # If direction is False, traverse to the 'from' node
                 else:
-                    if relationship['to_document']['document_id'] == document_id:
+                    if relationship_details['to_document']['document_id'] == document_id:
                         related_node_ids.append(related_document_id)
                         related_node_ids += self.get_related_nodes(related_document_id, down, visited)
-
+    
             return related_node_ids
-        
+    
         except Exception as e:
             logger.error(f"Failed to get_related_nodes for document_id={document_id}, down={down}: {e}", exc_info=True)
             raise
 
-    
+
     @staticmethod
     def _is_valid_weaviate_id(candidate_id: str) -> bool:
         """
