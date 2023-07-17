@@ -840,8 +840,8 @@ class WeaviateDataStore(DataStore):
             
             for relationship in relationships:
             
-                related_doc_id = relationship.get('toDocument', [{}])[0].get('document_id') if direction in ['to', 'both'] else None
-                related_doc_id = relationship.get('fromDocument', [{}])[0].get('document_id') if direction in ['from', 'both'] else None
+                related_doc_id = relationship.get('to_document', [{}])[0].get('document_id') if direction in ['to', 'both'] else None
+                related_doc_id = relationship.get('from_document', [{}])[0].get('document_id') if direction in ['from', 'both'] else None
                 
                 if not related_doc_id:
                     continue
