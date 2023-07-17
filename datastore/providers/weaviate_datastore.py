@@ -388,7 +388,7 @@ class WeaviateDataStore(DataStore):
 
     def _process_response(self, result):
         try:
-            logger.info(f"_process_response{result}")
+            #logger.info(f"_process_response{result}")
 
             if (
                 "data" in result
@@ -415,7 +415,7 @@ class WeaviateDataStore(DataStore):
 
     def _process_document_chunk(self, resp):
         try:
-            logger.info(f"_process_document_chunk{resp}")
+            #logger.info(f"_process_document_chunk{resp}")
 
             from_documents = []
             to_documents = []
@@ -801,6 +801,8 @@ class WeaviateDataStore(DataStore):
             # Get related nodes with new implementation
             related_nodes = self.get_related_nodes(document_id, direction=direction)
             
+            print(f"update_count: doc_id={document_id} has {len(related_nodes)} nodes in direction {direction}")
+            
             # Update count for each related node
             for related_node_id in related_nodes:
                 
@@ -827,12 +829,12 @@ class WeaviateDataStore(DataStore):
         
             # Get the chunk ID for the document 
             chunk_id = self.get_chunk_id(document_id)
-            logger.info(f"chunk_id={chunk_id}")
+            #logger.info(f"chunk_id={chunk_id}")
             
             # Fetch the full chunk/doc object using the id
             chunk = self.client.data_object.get_by_id(chunk_id, class_name=WEAVIATE_CLASS)
             
-            logger.info(f"chunk={chunk}")
+            #logger.info(f"chunk={chunk}")
             
             # Extract relationships
             relationships = chunk.get('properties', {}).get('relationships', [])
