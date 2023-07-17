@@ -803,21 +803,26 @@ class WeaviateDataStore(DataStore):
             
             print(f"update_count: doc_id={document_id} has {len(related_nodes)} nodes in direction {direction}")
             
+            # Determine the count type (upcount or downcount)
+            count_type = "downcount" if down else "upcount"
+            
             # Update count for each related node
             for related_node_id in related_nodes:
                 
                 # Get Weaviate ID
                 related_node_weaviate_id = self.get_chunk_id(related_node_id)
                 
-                # Increment or decrement count
-                if increment:
-                    self.client.data_object.update({
-                        "downcount" if down else "upcount": str(len(related_nodes) + 1)
-                    }, related_node_weaviate_id, WEAVIATE_CLASS)
+                # Calculate the new count
+                if related_nodes:
+                    new_count = len(related_nodes) + 1 if increment else len(related_nodes) - 1
                 else:
-                    self.client.data_object.update({
-                        "downcount" if down else "upcount": str(len(related_nodes) - 1)
-                    }, related_node_weaviate_id, WEAVIATE_CLASS)
+                    new_count = 1 if increment else 0
+                
+                # Update the count in the database
+                self.client.data_object.update({
+                    count_type: str(new_count)
+                }, related_node_weaviate_id, WEAVIATE_CLASS)
+
             
         except Exception as e:
             logger.error(f"Error updating count for {document_id}: {e}")
