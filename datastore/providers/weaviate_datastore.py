@@ -830,7 +830,7 @@ class WeaviateDataStore(DataStore):
             logger.info(f"chunk_id={chunk_id}")
             
             # Fetch the full chunk/doc object using the id
-            chunk = self.client.data_object.get_by_id(chunk_id, WEAVIATE_CLASS)
+            chunk = self.client.data_object.get_by_id(chunk_id, class_name=WEAVIATE_CLASS)
             
             logger.info(f"chunk={chunk}")
             
