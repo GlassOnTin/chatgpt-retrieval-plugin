@@ -831,6 +831,8 @@ class WeaviateDataStore(DataStore):
             # Fetch the full chunk/doc object using the id
             chunk = self.client.data_object.get_by_id(chunk_id, WEAVIATE_CLASS)
             
+            logger.info(f"chunk={chunk}")
+            
             # Extract relationships
             relationships = chunk.get('properties', {}).get('relationships', [])
             
@@ -839,7 +841,8 @@ class WeaviateDataStore(DataStore):
             related_docs = []
             
             for relationship in relationships:
-            
+                logger.info(f"relationship={relationship}")
+                
                 related_doc_id = relationship.get('to_document', [{}])[0].get('document_id') if direction in ['to', 'both'] else None
                 related_doc_id = relationship.get('from_document', [{}])[0].get('document_id') if direction in ['from', 'both'] else None
                 
