@@ -181,28 +181,27 @@ class WeaviateDataStore(DataStore):
                 raise
         else:
             try:
-                new_properties = {
-                    property["name"]: property for property in schema["properties"]
-                }
-                existing_properties = {
-                    property["name"]: property
-                    for property in existing_schema["properties"]
-                }
+                new_properties = {p['name']: p for p in new_schema['properties']} 
+                existing_properties = {p['name']: p for p in existing_schema['properties']}
+
+                added = set(new_properties) - set(existing_properties)
+                removed = set(existing_properties) - set(new_properties)
+
+                print(f"Removed properties: {removed}")
 
                 # Add any new properties
-                if len(new_properties) > len(existing_properties):
-                    logger.debug(f"Updating class {class_name} with schema {schema}")
-                    for property_name, property_schema in new_properties.items():
-                        if property_name not in existing_properties:
-                            self.client.schema.property.create(
-                                class_name, property_schema
-                            )
+                if len(added) > 0:
+                    print(f"Adding properties to class {class_name}: {added}")
+ 
+                    for property_schema in added:
+                        self.client.schema.property.create(
+                            class_name, property_schema
+                        )
 
                 # Weaviate doesn't support removing properties
-                elif len(new_properties) < len(existing_properties):
+                elif len(removed) > 0 ):
                     logger.error(f"Cannot remove properties from class {class_name}")
-                    logger.error(f"existing_properties: {existing_properties}")
-                    logger.error(f"new_properties: {new_properties}")
+                    logger.error(f"   removed: {removed}")
 
             except Exception as e:
                 logger.error(f"Failed to update weaviate class {class_name}: {e}")
