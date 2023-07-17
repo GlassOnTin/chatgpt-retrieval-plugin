@@ -864,10 +864,6 @@ class WeaviateDataStore(DataStore):
             logger.error(f"Error getting related nodes for {document_id}: {e}")
             raise
 
-  except Exception as e:
-    logger.error(f"Error getting related nodes for {document_id}: {e}")
-    raise
-
     @staticmethod
     def _is_valid_weaviate_id(candidate_id: str) -> bool:
         """
