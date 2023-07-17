@@ -164,7 +164,7 @@ class WeaviateDataStore(DataStore):
         self._create_or_update_class(WEAVIATE_RELATIONSHIP_CLASS, SCHEMA_RELATIONSHIP)
         self._add_relationships_property_to_document_class()
 
-    def _create_or_update_class(self, class_name, schema):
+    def _create_or_update_class(self, class_name, new_schema):
         try:
             existing_schema = self.client.schema.get(class_name)
 
@@ -173,8 +173,8 @@ class WeaviateDataStore(DataStore):
 
         if not existing_schema:
             try:
-                logger.debug(f"Creating class {class_name} with schema {schema}")
-                self.client.schema.create_class(schema)
+                logger.debug(f"Creating class {class_name} with schema {new_schema}")
+                self.client.schema.create_class(new_schema)
 
             except Exception as e:
                 logger.error(f"Failed to create weaviate class {class_name}: {e}")
