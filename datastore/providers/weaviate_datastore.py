@@ -789,12 +789,12 @@ class WeaviateDataStore(DataStore):
 
     def update_counts(self, from_document_id, to_document_id, increment=True):
         # Update the downcount of the 'from' node and all its 'from' ancestors
-        self.update_count(from_document_id, down=True, increment=increment)
+        self.update_count(from_document_id, direction='down', increment=increment)
 
         # Update the upcount of the 'to' node and all its 'to' descendants
-        self.update_count(to_document_id, down=False, increment=increment)
+        self.update_count(to_document_id, direction='up', increment=increment)
 
-    def update_count(self, document_id, down=True, increment=True):
+    def update_count(self, document_id,  direction: str='to', increment=True):
             
         try:
             
@@ -802,7 +802,7 @@ class WeaviateDataStore(DataStore):
             visited = set()
             
             # Get related nodes with new implementation
-            related_nodes = self.get_related_nodes(document_id, down=down, visited=visited)
+            related_nodes = self.get_related_nodes(document_id, direction=direction, visited=visited)
             
             # Update count for each related node
             for related_node_id in related_nodes:
