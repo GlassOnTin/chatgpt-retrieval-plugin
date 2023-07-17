@@ -804,7 +804,7 @@ class WeaviateDataStore(DataStore):
             print(f"update_count: doc_id={document_id} has {len(related_nodes)} nodes in direction {direction}")
             
             # Determine the count type (upcount or downcount)
-            count_type = "downcount" if down else "upcount"
+            count_type = "downcount" if direction == 'to' else "upcount"
             
             # Update count for each related node
             for related_node_id in related_nodes:
