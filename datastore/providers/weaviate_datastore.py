@@ -798,11 +798,8 @@ class WeaviateDataStore(DataStore):
             
         try:
             
-            # Initialize visited set
-            visited = set()
-            
             # Get related nodes with new implementation
-            related_nodes = self.get_related_nodes(document_id, direction=direction, visited=visited)
+            related_nodes = self.get_related_nodes(document_id, direction=direction)
             
             # Update count for each related node
             for related_node_id in related_nodes:
