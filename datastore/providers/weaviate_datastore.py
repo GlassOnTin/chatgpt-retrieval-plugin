@@ -329,7 +329,7 @@ class WeaviateDataStore(DataStore):
 
             query_results = self._process_response(result)
 
-            logger.info(f"query_results: {query_results}")
+            #logger.info(f"query_results: {query_results}")
 
             return QueryResult(query=query.query, results=query_results)
 
@@ -463,7 +463,7 @@ class WeaviateDataStore(DataStore):
                 ),
             )
 
-            logger.debug(f"doc_chunk={doc_chunk}")
+            #logger.debug(f"doc_chunk={doc_chunk}")
 
             return doc_chunk
 
@@ -568,7 +568,7 @@ class WeaviateDataStore(DataStore):
             "default": {"operator": "Equal", "value_key": "valueString"},
         }
 
-        print(f"filter: {filter}")
+        #print(f"filter: {filter}")
 
         for attr, value in filter.__dict__.items():
             if value is not None:
@@ -844,7 +844,7 @@ class WeaviateDataStore(DataStore):
             related_docs = []
             
             for relationship in relationships:
-                logger.info(f"relationship={relationship}")
+                #logger.info(f"relationship={relationship}")
                 
                 related_doc_id = relationship.get('to_document', [{}])[0].get('document_id') if direction in ['to', 'both'] else None
                 related_doc_id = relationship.get('from_document', [{}])[0].get('document_id') if direction in ['from', 'both'] else None
