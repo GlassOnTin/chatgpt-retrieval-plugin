@@ -837,61 +837,70 @@ class WeaviateDataStore(DataStore):
             raise
 
     def get_related_nodes(self, document_id, down=True, visited=None):
-    
-        relationship_properties = [p['name'] for p in SCHEMA_RELATIONSHIP['properties']]
-    
+        relationship_properties = [p["name"] for p in SCHEMA_RELATIONSHIP["properties"]]
+
         try:
             # Get node id
             node_id = self.get_chunk_id(document_id)
-    
+
             # Check if visited
             if node_id in visited:
                 return []
-            
-            # Mark visited    
+
+            # Mark visited
             visited.add(node_id)
-    
+
             # Get node object
             result = self.client.data_object.get_by_id(node_id, WEAVIATE_CLASS)
-            
+
             # Validate result
-            if set(result.keys()) != {'class', 'creationTimeUnix', 'id', 'lastUpdateTimeUnix', 'properties', 'vectorWeights'}:
+            if set(result.keys()) != {
+                "class",
+                "creationTimeUnix",
+                "id",
+                "lastUpdateTimeUnix",
+                "properties",
+                "vectorWeights",
+            }:
                 logger.warning(f"Unexpected result: {result}")
                 return []
-    
+
             # Get relationships
-            if 'properties' in result:
-                relationships = result['properties'].get('relationships', [])
+            if "properties" in result:
+                relationships = result["properties"].get("relationships", [])
             else:
                 logger.warning(f"Missing properties: {result}")
                 return []
-    
+
             # Traverse relationships
             related_ids = []
             for relationship in relationships:
-    
-                # Validate relationship 
+                # Validate relationship
                 if set(relationship.keys()) != set(relationship_properties):
                     logger.warning(f"Invalid relationship: {relationship}")
                     continue
-    
+
                 # Get relationship type
-                rel_type = relationship.get('relationship_type')
-    
+                rel_type = relationship.get("relationship_type")
+
                 # Follow "to" references
-                if down and 'to_document' in relationship:
-                    if relationship['to_document'].get('document_id') == document_id:
-                        related_ids.append(relationship['id'])  
-                        related_ids.extend(self.get_related_nodes(relationship['id'], down, visited))
-    
+                if down and "to_document" in relationship:
+                    if relationship["to_document"].get("document_id") == document_id:
+                        related_ids.append(relationship["id"])
+                        related_ids.extend(
+                            self.get_related_nodes(relationship["id"], down, visited)
+                        )
+
                 # Follow "from" references
-                elif 'from_document' in relationship:
-                    if relationship['from_document'].get('document_id') == document_id:
-                        related_ids.append(relationship['id'])
-                        related_ids.extend(self.get_related_nodes(relationship['id'], down, visited))
-    
+                elif "from_document" in relationship:
+                    if relationship["from_document"].get("document_id") == document_id:
+                        related_ids.append(relationship["id"])
+                        related_ids.extend(
+                            self.get_related_nodes(relationship["id"], down, visited)
+                        )
+
             return related_ids
-    
+
         except Exception as e:
             logger.error(f"Failed to get related nodes: {e}")
             raise
