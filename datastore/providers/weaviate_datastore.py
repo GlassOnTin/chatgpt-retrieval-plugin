@@ -199,7 +199,7 @@ class WeaviateDataStore(DataStore):
                         )
 
                 # Weaviate doesn't support removing properties
-                elif len(removed) > 0 ):
+                elif len(removed) > 0:
                     logger.error(f"Cannot remove properties from class {class_name}")
                     logger.error(f"   removed: {removed}")
 
