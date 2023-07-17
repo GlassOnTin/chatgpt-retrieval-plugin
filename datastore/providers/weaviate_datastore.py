@@ -839,7 +839,7 @@ class WeaviateDataStore(DataStore):
             # Fetch the full chunk/doc object using the id
             chunk = self.client.data_object.get_by_id(chunk_id, class_name=WEAVIATE_CLASS)
             
-            #logger.info(f"chunk={chunk}")
+            logger.info(f"chunk={chunk}")
             
             # Extract relationships
             relationships = chunk.get('properties', {}).get('relationships', [])
