@@ -795,106 +795,78 @@ class WeaviateDataStore(DataStore):
         self.update_count(to_document_id, down=False, increment=increment)
 
     def update_count(self, document_id, down=True, increment=True):
+            
         try:
-            # Initialize the set of visited nodes
+            
+            # Initialize visited set
             visited = set()
-
-            # Get the related nodes of the node
-            related_nodes = self.get_related_nodes(document_id, down, visited)
-
-            # Update the count of the node and all its related nodes
+            
+            # Get related nodes with new implementation
+            related_nodes = self.get_related_nodes(document_id, down=down, visited=visited)
+            
+            # Update count for each related node
             for related_node_id in related_nodes:
-                # Get the Weaviate ID for the related node
+                
+                # Get Weaviate ID
                 related_node_weaviate_id = self.get_chunk_id(related_node_id)
-
-                # Increment or decrement the count of the related node
+                
+                # Increment or decrement count
                 if increment:
-                    self.client.data_object.update(
-                        {
-                            "downcount"
-                            if down
-                            else "upcount": str(len(related_nodes) + 1)
-                        },
-                        related_node_weaviate_id,
-                        WEAVIATE_CLASS,
-                    )
+                    self.client.data_object.update({
+                        "downcount" if down else "upcount": str(len(related_nodes) + 1)
+                    }, related_node_weaviate_id, WEAVIATE_CLASS)
                 else:
-                    self.client.data_object.update(
-                        {
-                            "downcount"
-                            if down
-                            else "upcount": str(len(related_nodes) - 1)
-                        },
-                        related_node_weaviate_id,
-                        WEAVIATE_CLASS,
-                    )
-
+                    self.client.data_object.update({
+                        "downcount" if down else "upcount": str(len(related_nodes) - 1)
+                    }, related_node_weaviate_id, WEAVIATE_CLASS)
+            
         except Exception as e:
-            logger.error(
-                f"Failed to update_count for document_id={document_id}, down={down}, increment={increment}: {e}",
-                exc_info=True,
-            )
+            logger.error(f"Error updating count for {document_id}: {e}")
             raise
-
-    def get_related_nodes(self, document_id, down=True, visited=None):
-    
-        relationship_properties = [p['name'] for p in SCHEMA_RELATIONSHIP['properties']]
+            
+    def get_related_nodes(self, document_id: str, direction: str='to') -> List[str]:
     
         try:
-            # Get node id
-            node_id = self.get_chunk_id(document_id)
-    
-            # Check if visited
-            if node_id in visited:
-                return []
+        
+            # Get the chunk ID for the document 
+            chunk_id = self.get_chunk_id(document_id)
             
-            # Mark visited    
-            visited.add(node_id)
-    
-            # Get node object
-            result = self.client.data_object.get_by_id(node_id, WEAVIATE_CLASS)
+            # Fetch the full chunk/doc object using the id
+            chunk = self.client.data_object.get_by_id(chunk_id, WEAVIATE_CLASS)
             
-            # Validate result
-            if set(result.keys()) != {'class', 'creationTimeUnix', 'id', 'lastUpdateTimeUnix', 'properties', 'vectorWeights'}:
-                logger.warning(f"Unexpected result: {result}")
-                return []
-    
-            # Get relationships
-            if 'properties' in result:
-                relationships = result['properties'].get('relationships', [])
-            else:
-                logger.warning(f"Missing properties: {result}")
-                return []
-    
-            # Traverse relationships
-            related_ids = []
+            # Extract relationships
+            relationships = chunk.get('properties', {}).get('relationships', [])
+            
+            visited = set([chunk['id']])
+            
+            related_docs = []
+            
             for relationship in relationships:
-    
-                # Validate relationship 
-                if set(relationship.keys()) != set(relationship_properties):
-                    logger.warning(f"Invalid relationship: {relationship}")
+            
+                related_doc_id = relationship.get('toDocument', [{}])[0].get('document_id') if direction in ['to', 'both'] else None
+                related_doc_id = relationship.get('fromDocument', [{}])[0].get('document_id') if direction in ['from', 'both'] else None
+                
+                if not related_doc_id:
                     continue
+                    
+                if related_doc_id in visited:
+                    continue
+                
+                related_docs.append(related_doc_id)
+                
+                visited.add(related_doc_id)
+                
+                related_docs.extend(self.get_related_nodes(related_doc_id, direction))
     
-                # Get relationship type
-                rel_type = relationship.get('relationship_type')
-    
-                # Follow "to" references
-                if down and 'to_document' in relationship:
-                    if relationship['to_document'].get('document_id') == document_id:
-                        related_ids.append(relationship['id'])  
-                        related_ids.extend(self.get_related_nodes(relationship['id'], down, visited))
-    
-                # Follow "from" references
-                elif 'from_document' in relationship:
-                    if relationship['from_document'].get('document_id') == document_id:
-                        related_ids.append(relationship['id'])
-                        related_ids.extend(self.get_related_nodes(relationship['id'], down, visited))
-    
-            return related_ids
-    
+            return related_docs
+        
         except Exception as e:
-            logger.error(f"Failed to get related nodes: {e}")
+            logger.error(f"Error getting related nodes for {document_id}: {e}")
             raise
+
+  except Exception as e:
+    logger.error(f"Error getting related nodes for {document_id}: {e}")
+    raise
 
     @staticmethod
     def _is_valid_weaviate_id(candidate_id: str) -> bool:
