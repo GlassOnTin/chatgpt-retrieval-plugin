@@ -832,7 +832,12 @@ class WeaviateDataStore(DataStore):
        
         if visited is None:
             visited = set()
-    
+            
+        if document_id in visited:
+            return []
+            
+        visited.add(document_id)    
+        
         try:
             # Get the chunk ID for the document 
             chunk_id = self.get_chunk_id(document_id)
@@ -845,8 +850,6 @@ class WeaviateDataStore(DataStore):
             # Extract relationships
             relationships = chunk.get('properties', {}).get('relationships', [])
             
-            visited.add(chunk['id'])
-            
             related_docs = []
             
             for relationship in relationships:
@@ -858,21 +861,26 @@ class WeaviateDataStore(DataStore):
                 # Extract the related document's ID from the 'from_document' or 'to_document' property
                 if direction in ['to', 'both']:
                     to_document = relationship_obj.get('properties', {}).get('to_document', [{}])[0]
-                    related_doc_id = to_document.get('beacon').split('/')[-1]
+                    related_chunk_id = to_document.get('beacon').split('/')[-1]
                     
                 elif direction == 'from':
                     from_document = relationship_obj.get('properties', {}).get('from_document', [{}])[0]
-                    related_doc_id = from_document.get('beacon').split('/')[-1]
+                    related_chunk_id = from_document.get('beacon').split('/')[-1]
                 else:
                     continue
                 
-                if not related_doc_id or related_doc_id in visited:
+                if not related_chunk_id
                     continue
                 
+                chunk = self.client.data_object.get_by_id(related_chunk_id, class_name=WEAVIATE_CLASS)
+                
+                if not chunk or not chunk.get('properties'):
+                    continue
+                
+                related_doc_id = chunk.get('properties', {}).get('document_id', {})
+                
                 related_docs.append(related_doc_id)
-                
-                visited.add(related_doc_id)
-                
+              
                 related_docs.extend(self.get_related_nodes(related_doc_id, visited, direction))
 
             return related_docs
