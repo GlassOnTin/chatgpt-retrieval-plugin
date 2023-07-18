@@ -869,7 +869,7 @@ class WeaviateDataStore(DataStore):
                 else:
                     continue
                 
-                if not related_chunk_id
+                if not related_chunk_id:
                     continue
                 
                 chunk = self.client.data_object.get_by_id(related_chunk_id, class_name=WEAVIATE_CLASS)
