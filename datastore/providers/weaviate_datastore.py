@@ -828,13 +828,14 @@ class WeaviateDataStore(DataStore):
             logger.error(f"Error updating count for {document_id}: {e}")
             raise
             
-    def get_related_nodes(self, document_id: str, direction: str='to') -> List[str]:
+    def get_related_nodes(self, document_id: str, visited: set = None, direction: str='to') -> List[str]:
+       
+        if visited is None:
+            visited = set()
     
         try:
-        
             # Get the chunk ID for the document 
             chunk_id = self.get_chunk_id(document_id)
-            #logger.info(f"chunk_id={chunk_id}")
             
             # Fetch the full chunk/doc object using the id
             chunk = self.client.data_object.get_by_id(chunk_id, class_name=WEAVIATE_CLASS)
@@ -844,33 +845,27 @@ class WeaviateDataStore(DataStore):
             # Extract relationships
             relationships = chunk.get('properties', {}).get('relationships', [])
             
-            visited = set([chunk['id']])
+            visited.add(chunk['id'])
             
             related_docs = []
-            
             for relationship in relationships:
-                #logger.info(f"relationship={relationship}")
+                related_doc_id = relationship.get('beacon').split('/')[-1]
                 
-                related_doc_id = relationship.get('to_document', [{}])[0].get('document_id') if direction in ['to', 'both'] else None
-                related_doc_id = relationship.get('from_document', [{}])[0].get('document_id') if direction in ['from', 'both'] else None
-                
-                if not related_doc_id:
-                    continue
-                    
-                if related_doc_id in visited:
+                if not related_doc_id or related_doc_id in visited:
                     continue
                 
                 related_docs.append(related_doc_id)
                 
                 visited.add(related_doc_id)
                 
-                related_docs.extend(self.get_related_nodes(related_doc_id, direction))
+                related_docs.extend(self.get_related_nodes(related_doc_id, visited, direction))
     
             return related_docs
         
         except Exception as e:
             logger.error(f"Error getting related nodes for {document_id}: {e}")
             raise
+            
 
     @staticmethod
     def _is_valid_weaviate_id(candidate_id: str) -> bool:
