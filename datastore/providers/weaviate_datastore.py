@@ -849,7 +849,13 @@ class WeaviateDataStore(DataStore):
             
             related_docs = []
             for relationship in relationships:
-                related_doc_id = relationship.get('beacon').split('/')[-1]
+                relationship_id = relationship.get('beacon').split('/')[-1]
+                
+                # Fetch the relationship object
+                relationship_obj = self.client.data_object.get_by_id(relationship_id, class_name='OpenAIRelationship')
+                
+                # Extract the related document's ID from the relationship object
+                related_doc_id = relationship_obj.get('properties', {}).get('to', {}).get('beacon').split('/')[-1]
                 
                 if not related_doc_id or related_doc_id in visited:
                     continue
@@ -859,7 +865,7 @@ class WeaviateDataStore(DataStore):
                 visited.add(related_doc_id)
                 
                 related_docs.extend(self.get_related_nodes(related_doc_id, visited, direction))
-    
+
             return related_docs
         
         except Exception as e:
