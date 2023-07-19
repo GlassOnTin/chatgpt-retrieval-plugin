@@ -850,6 +850,8 @@ class WeaviateDataStore(DataStore):
             # Extract relationships
             relationships = chunk.get('properties', {}).get('relationships', [])
             
+            logger.info(f"relationships={relationships}")
+            
             related_docs = []
             
             for relationship in relationships:
