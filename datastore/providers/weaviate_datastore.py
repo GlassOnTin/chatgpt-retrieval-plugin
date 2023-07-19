@@ -855,8 +855,12 @@ class WeaviateDataStore(DataStore):
             related_docs = []
             
             for relationship in relationships:
+                logger.info(f"relationship={relationship}")
+            
                 relationship_id = relationship.get('beacon').split('/')[-1]
                 
+                logger.info(f"id={relationship_id}")
+                 
                 # Fetch the relationship object
                 relationship_obj = self.client.data_object.get_by_id(relationship_id, class_name='OpenAIRelationship')
                 
