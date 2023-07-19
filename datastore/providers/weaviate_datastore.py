@@ -801,7 +801,9 @@ class WeaviateDataStore(DataStore):
             # Get related nodes with new implementation
             related_nodes = self.get_related_nodes(document_id, direction=direction)
             
-            print(f"update_count: doc_id={document_id} has {len(related_nodes)} nodes in direction {direction}")
+            logger.info(f"update_count: doc_id={document_id} has {len(related_nodes)} nodes in direction {direction}")
+            
+            logger.info(related_nodes)
             
             # Determine the count type (upcount or downcount)
             count_type = "downcount" if direction == 'to' else "upcount"
@@ -812,11 +814,13 @@ class WeaviateDataStore(DataStore):
                 # Get Weaviate ID
                 related_node_weaviate_id = self.get_chunk_id(related_node_id)
                 
+                logger.info(f"related doc id={related_node_id}  uuid={related_node_weaviate_id}")
+                
                 # Calculate the new count
                 if related_nodes:
-                    new_count = len(related_nodes) + 1 if increment else len(related_nodes) - 1
+                    new_count = len(related_nodes)
                 else:
-                    new_count = 1 if increment else 0
+                    new_count = 0
                 
                 # Update the count in the database
                 self.client.data_object.update({
