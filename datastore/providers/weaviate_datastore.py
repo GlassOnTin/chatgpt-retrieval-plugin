@@ -789,10 +789,10 @@ class WeaviateDataStore(DataStore):
 
     def update_counts(self, from_document_id, to_document_id, increment=True):
         # Update the downcount of the 'from' node and all its 'from' ancestors
-        self.update_count(from_document_id, direction='down', increment=increment)
+        self.update_count(from_document_id, direction='to', increment=increment)
 
         # Update the upcount of the 'to' node and all its 'to' descendants
-        self.update_count(to_document_id, direction='up', increment=increment)
+        self.update_count(to_document_id, direction='from', increment=increment)
 
     def update_count(self, document_id,  direction: str='to', increment=True):
             
@@ -845,26 +845,17 @@ class WeaviateDataStore(DataStore):
             # Fetch the full chunk/doc object using the id
             chunk = self.client.data_object.get_by_id(chunk_id, class_name=WEAVIATE_CLASS)
             
-            logger.info(f"chunk={chunk}")
-            
             # Extract relationships
             relationships = chunk.get('properties', {}).get('relationships', [])
-            
-            logger.info(f"relationships={relationships}")
             
             related_docs = []
             
             for relationship in relationships:
-                logger.info(f"relationship={relationship}")
             
                 relationship_id = relationship.get('beacon').split('/')[-1]
                 
-                logger.info(f"id={relationship_id}")
-                 
                 # Fetch the relationship object
                 relationship_obj = self.client.data_object.get_by_id(relationship_id, class_name='OpenAIRelationship')
-                
-                logger.info(f"id={relationship_obj}")
                 
                 # Extract the related document's ID from the 'from_document' or 'to_document' property
                 if direction in ['to', 'both']:
