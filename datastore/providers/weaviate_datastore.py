@@ -864,6 +864,8 @@ class WeaviateDataStore(DataStore):
                 # Fetch the relationship object
                 relationship_obj = self.client.data_object.get_by_id(relationship_id, class_name='OpenAIRelationship')
                 
+                logger.info(f"id={relationship_obj}")
+                
                 # Extract the related document's ID from the 'from_document' or 'to_document' property
                 if direction in ['to', 'both']:
                     to_document = relationship_obj.get('properties', {}).get('to_document', [{}])[0]
