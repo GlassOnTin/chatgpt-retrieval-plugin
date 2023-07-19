@@ -873,7 +873,7 @@ class WeaviateDataStore(DataStore):
                     
                 elif direction == 'from':
                     from_document = relationship_obj.get('properties', {}).get('from_document', [{}])[0]
-                    related_chunk_id = frL om_document.get('beacon').split('/')[-1]
+                    related_chunk_id = from_document.get('beacon').split('/')[-1]
                 else:
                     continue
                 
