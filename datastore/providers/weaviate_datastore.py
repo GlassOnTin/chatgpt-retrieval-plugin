@@ -873,14 +873,18 @@ class WeaviateDataStore(DataStore):
                     
                 elif direction == 'from':
                     from_document = relationship_obj.get('properties', {}).get('from_document', [{}])[0]
-                    related_chunk_id = from_document.get('beacon').split('/')[-1]
+                    related_chunk_id = frL om_document.get('beacon').split('/')[-1]
                 else:
                     continue
                 
                 if not related_chunk_id:
                     continue
                 
+                logger.info(f"related_chunk_id={related_chunk_id}")
+                
                 chunk = self.client.data_object.get_by_id(related_chunk_id, class_name=WEAVIATE_CLASS)
+                
+                logger.info(f"related chunk={chunk}")
                 
                 if not chunk or not chunk.get('properties'):
                     continue
