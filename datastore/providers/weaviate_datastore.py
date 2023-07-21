@@ -99,6 +99,12 @@ SCHEMA = {
     ],
 }
 
+relationships_property = {
+            "dataType": [WEAVIATE_RELATIONSHIP_CLASS],
+            "name": "relationships",
+            "description": "The relationships between this document and others",
+        }
+
 SCHEMA_RELATIONSHIP = {
     "class": WEAVIATE_RELATIONSHIP_CLASS,
     "description": "The relationship class",
@@ -188,6 +194,9 @@ class WeaviateDataStore(DataStore):
                     property["name"]: property
                     for property in existing_schema["properties"]
                 }
+                
+                # Don't try to remove the relationships property
+                existing_properties.pop(relationships_property["name"], default)
 
                 if len(new_properties) > len(existing_properties):
                     logger.debug(f"Updating class {class_name} with schema {schema}")
@@ -205,11 +214,6 @@ class WeaviateDataStore(DataStore):
                 raise
 
     def _add_relationships_property_to_document_class(self):
-        relationships_property = {
-            "dataType": [WEAVIATE_RELATIONSHIP_CLASS],
-            "name": "relationships",
-            "description": "The relationships between this document and others",
-        }
 
         logger.debug(
             f"Adding relationships property to collection {WEAVIATE_CLASS} with properties {relationships_property}"
@@ -226,7 +230,7 @@ class WeaviateDataStore(DataStore):
         # Check if the 'relationships' property already exists
         try:
             if not any(
-                prop for prop in schema["properties"] if prop["name"] == "relationships"
+                prop for prop in schema["properties"] if prop["name"] == relationships_property["name"]
             ):
                 # If the property doesn't exist, add it
                 self.client.schema.property.create(
