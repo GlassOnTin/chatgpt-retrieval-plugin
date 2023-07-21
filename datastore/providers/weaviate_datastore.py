@@ -785,18 +785,12 @@ class WeaviateDataStore(DataStore):
             logger.error(f"Failed to add reference to relationship: {e}", exc_info=True)
             raise
 
-    def get_from_ancestors(self, document_id, visited=None):
-        return self.get_related_nodes(document_id, down=False, visited=visited)
-
-    def get_to_descendants(self, document_id, visited=None):
-        return self.get_related_nodes(document_id, down=True, visited=visited)
-
     def update_counts(self, from_document_id, to_document_id, increment=True):
         # Update the downcount of the 'from' node and all its 'from' ancestors
-        self.update_count(from_document_id, direction='to', increment=increment)
+        self.update_count(from_document_id, direction='from', increment=increment)
 
         # Update the upcount of the 'to' node and all its 'to' descendants
-        self.update_count(to_document_id, direction='from', increment=increment)
+        self.update_count(to_document_id, direction='to', increment=increment)
 
     def update_count(self, document_id,  direction: str='to', increment=True):
             
