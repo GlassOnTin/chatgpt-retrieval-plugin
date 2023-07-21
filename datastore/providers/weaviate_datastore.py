@@ -787,10 +787,10 @@ class WeaviateDataStore(DataStore):
             raise
 
     def update_counts(self, from_document_id, to_document_id, increment=True):
-        # Update the downcount of the 'from' node and all its 'from' ancestors
+        # Update the upcount of the 'from' node and all its 'from' descendants
         self.update_count(from_document_id, direction='from', increment=increment)
-
-        # Update the upcount of the 'to' node and all its 'to' descendants
+    
+        # Update the downcount of the 'to' node and all its 'to' ancestors
         self.update_count(to_document_id, direction='to', increment=increment)
 
     def update_count(self, document_id,  direction: str='to', increment=True):
@@ -805,7 +805,7 @@ class WeaviateDataStore(DataStore):
             logger.info(related_nodes)
             
             # Determine the count type (upcount or downcount)
-            count_type = "downcount" if direction == 'to' else "upcount"
+            count_type = "upcount" if direction == 'to' else "downcount"
             
             # Update count for each related node
             for related_node_id in related_nodes:
