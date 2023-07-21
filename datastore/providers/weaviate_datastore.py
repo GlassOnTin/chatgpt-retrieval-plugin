@@ -591,7 +591,8 @@ class WeaviateDataStore(DataStore):
                     value_key: value,
                 }
 
-                logger.debug(f"Operand: {operand}")
+                #logger.debug(f"Operand: {operand}")
+                
                 operands.append(operand)
 
         # If there's only one operand, return it directly instead of using an 'And' operator
@@ -821,9 +822,10 @@ class WeaviateDataStore(DataStore):
                     new_count = 0
                 
                 # Update the count in the database
-                self.client.data_object.update({
-                    count_type: str(new_count)
-                }, related_node_weaviate_id, WEAVIATE_CLASS)
+                self.client.data_object.update( \
+                    uuid=related_node_weaviate_id, \
+                    class_name=WEAVIATE_CLASS, \
+                    data_object={count_type: str(new_count)})
 
             
         except Exception as e:
