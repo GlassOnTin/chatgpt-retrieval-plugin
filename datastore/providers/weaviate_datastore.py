@@ -833,7 +833,7 @@ class WeaviateDataStore(DataStore):
             raise
             
     def get_related_nodes(self, document_id: str, visited: set = None, direction: str='to') -> List[str]:
-       
+                   
         if visited is None:
             visited = set()
             
@@ -887,15 +887,13 @@ class WeaviateDataStore(DataStore):
                 related_doc_id = chunk.get('properties', {}).get('document_id', {})
                 
                 related_docs.append(related_doc_id)
-              
-                related_docs.extend(self.get_related_nodes(related_doc_id, visited, direction))
-
+    
             return related_docs
         
         except Exception as e:
             logger.error(f"Error getting related nodes for {document_id}: {e}")
             raise
-            
+    
 
     @staticmethod
     def _is_valid_weaviate_id(candidate_id: str) -> bool:
