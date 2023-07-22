@@ -687,6 +687,10 @@ class WeaviateDataStore(DataStore):
                 to_class_name=WEAVIATE_RELATIONSHIP_CLASS,
                 consistency_level=consistency_level,
             )
+            
+            # Update the upcount and downcount of the metadata
+            self.update_counts(from_document_id, to_document_id)
+
 
             return True
         except Exception as e:
@@ -786,71 +790,56 @@ class WeaviateDataStore(DataStore):
             logger.error(f"Failed to add reference to relationship: {e}", exc_info=True)
             raise
 
-    def update_counts(self, from_document_id, to_document_id, increment=True):
+        
+    def update_counts(self, from_document_id, to_document_id):
+        
         # Update the upcount of the 'from' node and all its 'from' descendants
-        self.update_count(from_document_id, direction='from', increment=increment)
+        self.update_counts(from_document_id, direction='from')
     
         # Update the downcount of the 'to' node and all its 'to' ancestors
-        self.update_count(to_document_id, direction='to', increment=increment)
+        self.update_counts(to_document_id, direction='to')
 
-    def update_count(self, document_id,  direction: str='to', increment=True):
-            
-        try:
-            
-            # Get related nodes with new implementation
-            related_nodes = self.get_related_nodes(document_id, direction=direction)
-            
-            logger.info(f"update_count: doc_id={document_id} has {len(related_nodes)} nodes in direction {direction}")
-            
-            logger.info(related_nodes)
-            
-            # Determine the count type (upcount or downcount)
-            count_type = "downcount" if direction == 'to' else "upcount"
-            
-            # Update count for each related node
-            for related_node_id in related_nodes:
-                
-                # Get Weaviate ID
-                related_node_weaviate_id = self.get_chunk_id(related_node_id)
-                
-                logger.info(f"related doc id={related_node_id}  uuid={related_node_weaviate_id}")
-                
-                # Calculate the new count
-                if related_nodes:
-                    new_count = len(related_nodes)
-                else:
-                    new_count = 0
-                
-                    # Get the current count
-                    current_count = self.client.data_object.get_by_id(related_node_weaviate_id, class_name=WEAVIATE_CLASS).get('properties', {}).get(count_type)
-                    logger.info(f"Current {count_type} for {related_node_id} (uuid={related_node_weaviate_id}): {current_count}")
-                    
-                    # Update the count in the database
-                    self.client.data_object.update( \
-                        uuid=related_node_weaviate_id, \
-                        class_name=WEAVIATE_CLASS, \
-                        data_object={count_type: str(new_count)})
-                    
-                    # Get the updated count
-                    updated_count = self.client.data_object.get_by_id(related_node_weaviate_id, class_name=WEAVIATE_CLASS).get('properties', {}).get(count_type)
-                    logger.info(f"Updated {count_type} for {related_node_id} (uuid={related_node_weaviate_id}): {updated_count}")
-                    
-
-            
-        except Exception as e:
-            logger.error(f"Error updating count for {document_id}: {e}")
-            raise
-            
-    def get_related_nodes(self, document_id: str, visited: set = None, direction: str='to') -> List[str]:
-                   
-        if visited is None:
-            visited = set()
-            
+   def update_counts(self, document_id, direction='to'):
+        visited = set()
+        self.update_count_recursive(document_id, visited, direction)
+    
+    def update_count_recursive(self, document_id, visited, direction):
         if document_id in visited:
-            return []
-            
-        visited.add(document_id)    
+            return 0
+    
+        visited.add(document_id)
+    
+        related_nodes = self.get_related_nodes(document_id, direction=direction)
+        count = len(related_nodes)
+    
+        for related_node_id in related_nodes:
+            count += self.update_count_recursive(related_node_id, visited, direction, increment)
+    
+        self.update_count_in_db(document_id, count, direction)
+    
+        return count
+    
+    def update_count_in_db(self, document_id, count, direction):
         
+        try:
+            count_type = "downcount" if direction == 'to' else "upcount"
+            chunk_id = self.get_chunk_id(document_id)
+            chunk = self.client.data_object.get_by_id(chunk_id, class_name=WEAVIATE_CLASS)
+            current_count = chunk.get('properties', {}).get(count_type, 0)
+        
+            if increment:
+                new_count = current_count + count
+            else:
+                new_count = current_count - count
+        
+            self.client.data_object.update(
+                uuid=chunk_id,
+                class_name=WEAVIATE_CLASS,
+                data_object={count_type: str(new_count)}
+            )
+            
+    def get_related_nodes(self, document_id: str, direction: str='to') -> List[str]:
+    
         try:
             # Get the chunk ID for the document 
             chunk_id = self.get_chunk_id(document_id)
