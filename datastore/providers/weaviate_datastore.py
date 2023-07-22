@@ -799,7 +799,7 @@ class WeaviateDataStore(DataStore):
         # Update the downcount of the 'to' node and all its 'to' ancestors
         self.update_counts(to_document_id, direction='to')
 
-   def update_counts(self, document_id, direction='to'):
+    def update_counts(self, document_id, direction='to'):
         visited = set()
         self.update_count_recursive(document_id, visited, direction)
     
