@@ -607,7 +607,7 @@ class WeaviateDataStore(DataStore):
         to_document_id: str,
         from_relationship_type: str,
         to_relationship_type: str,
-        consistency_level: weaviate.data.replication.ConsistencyLevel = weaviate.data.replication.ConsistencyLevel.ALL,
+        consistency_level: weaviate.data.replication.ConsistencyLevel = weaviate.data.replication.ConsistencyLevel.ALL
     ) -> bool:
         """
         Adds a two-way cross-reference between two documents properties
@@ -641,7 +641,7 @@ class WeaviateDataStore(DataStore):
             )
 
             # Update the upcount and downcount of the metadata
-            self.update_counts(from_document_id, to_document_id)
+            self.update_counts(from_document_id, to_document_id, increment=True)
 
             return True
         except Exception as e:
@@ -689,7 +689,7 @@ class WeaviateDataStore(DataStore):
             )
             
             # Update the upcount and downcount of the metadata
-            self.update_counts(from_document_id, to_document_id)
+            self.update_counts(from_document_id, to_document_id, increment=False)
 
 
             return True
@@ -791,19 +791,20 @@ class WeaviateDataStore(DataStore):
             raise
 
         
-    def update_counts(self, from_document_id, to_document_id):
+    def update_counts(self, from_document_id, to_document_id, increment=True):
         
         # Update the upcount of the 'from' node and all its 'from' descendants
-        self.update_counts(from_document_id, direction='from')
+        self.update_counts(from_document_id, direction='from', increment)
     
         # Update the downcount of the 'to' node and all its 'to' ancestors
-        self.update_counts(to_document_id, direction='to')
+        self.update_counts(to_document_id, direction='to', increment)
 
-    def update_counts(self, document_id, direction='to'):
+    def update_counts(self, document_id, direction='to', increment=True):
+        
         visited = set()
-        self.update_count_recursive(document_id, visited, direction)
+        self.update_count_recursive(document_id, visited, direction, increment)
     
-    def update_count_recursive(self, document_id, visited, direction):
+    def update_count_recursive(self, document_id, visited, direction, increment):
         
         try:
             if document_id in visited:
@@ -825,7 +826,7 @@ class WeaviateDataStore(DataStore):
             logger.error(f"Error update_count_recursive {document_id} {count} {direction}: {e}")
             raise
     
-    def update_count_in_db(self, document_id, count, direction):
+    def update_count_in_db(self, document_id, count, direction, increment):
         
         try:
             count_type = "downcount" if direction == 'to' else "upcount"
