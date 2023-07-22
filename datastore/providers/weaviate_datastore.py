@@ -821,11 +821,20 @@ class WeaviateDataStore(DataStore):
                 else:
                     new_count = 0
                 
-                # Update the count in the database
-                self.client.data_object.update( \
-                    uuid=related_node_weaviate_id, \
-                    class_name=WEAVIATE_CLASS, \
-                    data_object={count_type: str(new_count)})
+                    # Get the current count
+                    current_count = self.client.data_object.get_by_id(related_node_weaviate_id, class_name=WEAVIATE_CLASS).get('properties', {}).get(count_type)
+                    logger.info(f"Current {count_type} for {related_node_id} (uuid={related_node_weaviate_id}): {current_count}")
+                    
+                    # Update the count in the database
+                    self.client.data_object.update( \
+                        uuid=related_node_weaviate_id, \
+                        class_name=WEAVIATE_CLASS, \
+                        data_object={count_type: str(new_count)})
+                    
+                    # Get the updated count
+                    updated_count = self.client.data_object.get_by_id(related_node_weaviate_id, class_name=WEAVIATE_CLASS).get('properties', {}).get(count_type)
+                    logger.info(f"Updated {count_type} for {related_node_id} (uuid={related_node_weaviate_id}): {updated_count}")
+                    
 
             
         except Exception as e:
