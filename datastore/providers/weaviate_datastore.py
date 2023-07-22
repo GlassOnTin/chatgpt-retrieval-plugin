@@ -804,20 +804,26 @@ class WeaviateDataStore(DataStore):
         self.update_count_recursive(document_id, visited, direction)
     
     def update_count_recursive(self, document_id, visited, direction):
-        if document_id in visited:
-            return 0
-    
-        visited.add(document_id)
-    
-        related_nodes = self.get_related_nodes(document_id, direction=direction)
-        count = len(related_nodes)
-    
-        for related_node_id in related_nodes:
-            count += self.update_count_recursive(related_node_id, visited, direction, increment)
-    
-        self.update_count_in_db(document_id, count, direction)
-    
-        return count
+        
+        try:
+            if document_id in visited:
+                return 0
+        
+            visited.add(document_id)
+        
+            related_nodes = self.get_related_nodes(document_id, direction=direction)
+            count = len(related_nodes)
+        
+            for related_node_id in related_nodes:
+                count += self.update_count_recursive(related_node_id, visited, direction, increment)
+        
+            self.update_count_in_db(document_id, count, direction)
+        
+            return count
+        
+        except Exception as e:
+            logger.error(f"Error update_count_recursive {document_id} {count} {direction}: {e}")
+            raise
     
     def update_count_in_db(self, document_id, count, direction):
         
@@ -837,6 +843,10 @@ class WeaviateDataStore(DataStore):
                 class_name=WEAVIATE_CLASS,
                 data_object={count_type: str(new_count)}
             )
+            
+        except Exception as e:
+            logger.error(f"Error update_count_in_db {document_id} {count} {direction}: {e}")
+            raise
             
     def get_related_nodes(self, document_id: str, direction: str='to') -> List[str]:
     
