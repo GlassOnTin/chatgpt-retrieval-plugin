@@ -818,7 +818,7 @@ class WeaviateDataStore(DataStore):
             for related_node_id in related_nodes:
                 count += self.update_count_recursive(related_node_id, visited, direction, increment)
         
-            self.update_count_in_db(document_id, count, direction)
+            self.update_count_in_db(document_id, count, direction, increment)
         
             return count
         
