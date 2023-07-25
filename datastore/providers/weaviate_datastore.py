@@ -804,7 +804,7 @@ class WeaviateDataStore(DataStore):
         visited = set()
         self._update_count_recursive(document_id, visited, direction, increment)
     
-    def update_count_recursive(self, document_id, visited, direction, increment):
+    def _update_count_recursive(self, document_id, visited, direction, increment):
         
         try:
             if document_id in visited:
