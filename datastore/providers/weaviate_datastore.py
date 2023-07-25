@@ -794,15 +794,15 @@ class WeaviateDataStore(DataStore):
     def update_counts(self, from_document_id, to_document_id, increment=True):
         
         # Update the upcount of the 'from' node and all its 'from' descendants
-        self.update_counts(from_document_id, direction='from', increment=increment)
+        self._update_counts(from_document_id, direction='from', increment=increment)
     
         # Update the downcount of the 'to' node and all its 'to' ancestors
-        self.update_counts(to_document_id, direction='to', increment=increment)
+        self._update_counts(to_document_id, direction='to', increment=increment)
 
-    def update_counts(self, document_id, direction='to', increment=True):
+    def _update_counts(self, document_id, direction='to', increment=True):
         
         visited = set()
-        self.update_count_recursive(document_id, visited, direction, increment)
+        self._update_count_recursive(document_id, visited, direction, increment)
     
     def update_count_recursive(self, document_id, visited, direction, increment):
         
@@ -814,11 +814,13 @@ class WeaviateDataStore(DataStore):
         
             related_nodes = self.get_related_nodes(document_id, direction=direction)
             count = len(related_nodes)
+            
+            logger.info(f"Doc {document_id} has {direction} {related_nodes}")
         
             for related_node_id in related_nodes:
-                count += self.update_count_recursive(related_node_id, visited, direction, increment)
+                count += self._update_count_recursive(related_node_id, visited, direction, increment)
         
-            self.update_count_in_db(document_id, count, direction, increment)
+            self._update_count_in_db(document_id, count, direction, increment)
         
             return count
         
@@ -826,13 +828,15 @@ class WeaviateDataStore(DataStore):
             logger.error(f"Error update_count_recursive {document_id} {count} {direction}: {e}")
             raise
     
-    def update_count_in_db(self, document_id, count, direction, increment):
+    def _update_count_in_db(self, document_id, count, direction, increment):
         
         try:
             count_type = "downcount" if direction == 'to' else "upcount"
             chunk_id = self.get_chunk_id(document_id)
             chunk = self.client.data_object.get_by_id(chunk_id, class_name=WEAVIATE_CLASS)
             current_count = chunk.get('properties', {}).get(count_type, 0)
+            if not current_count:
+                current_count=0
         
             if increment:
                 new_count = current_count + count
