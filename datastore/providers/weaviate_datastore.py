@@ -804,8 +804,7 @@ class WeaviateDataStore(DataStore):
         visited = set()
         self._update_count_recursive(document_id, visited, direction, increment)
     
-    def _update_count_recursive(self, document_id, visited, direction, increment):
-        
+    def _update_count_recursive(self, document_id, visited, direction):
         try:
             if document_id in visited:
                 return 0
@@ -818,43 +817,32 @@ class WeaviateDataStore(DataStore):
             logger.info(f"Doc {document_id} has {direction} {related_nodes}")
         
             for related_node_id in related_nodes:
-                count += self._update_count_recursive(related_node_id, visited, direction, increment)
+                count += self._update_count_recursive(related_node_id, visited, direction)
         
-            self._update_count_in_db(document_id, count, direction, increment)
+            self._update_count_in_db(document_id, count, direction)
         
             return count
         
         except Exception as e:
             logger.error(f"Error update_count_recursive {document_id} {count} {direction}: {e}")
             raise
+
     
-    def _update_count_in_db(self, document_id, count, direction, increment):
-        
+    def _update_count_in_db(self, document_id, count, direction):
         try:
             count_type = "downcount" if direction == 'to' else "upcount"
             chunk_id = self.get_chunk_id(document_id)
-            chunk = self.client.data_object.get_by_id(chunk_id, class_name=WEAVIATE_CLASS)
             
-            current_count = chunk.get('properties', {}).get(count_type, 0)
-            
-            if not current_count:
-                current_count=0
-            current_count = int(current_count)
-            
-            if increment:
-                new_count = current_count + count
-            else:
-                new_count = current_count - count
-        
             self.client.data_object.update(
                 uuid=chunk_id,
                 class_name=WEAVIATE_CLASS,
-                data_object={count_type: str(new_count)}
+                data_object={count_type: str(count)}
             )
             
         except Exception as e:
             logger.error(f"Error update_count_in_db {document_id} {count} {direction}: {e}")
             raise
+
             
     def get_related_nodes(self, document_id: str, direction: str='to') -> List[str]:
     
@@ -883,13 +871,11 @@ class WeaviateDataStore(DataStore):
                 if direction in ['to', 'both']:
                     to_document = relationship_obj.get('properties', {}).get('to_document', [{}])[0]
                     related_chunk_id = to_document.get('beacon').split('/')[-1]
-                    
-                elif direction == 'from':
+                                    
+                if direction in ['from', 'both']:
                     from_document = relationship_obj.get('properties', {}).get('from_document', [{}])[0]
                     related_chunk_id = from_document.get('beacon').split('/')[-1]
-                else:
-                    continue
-                
+
                 if not related_chunk_id:
                     continue
                 
