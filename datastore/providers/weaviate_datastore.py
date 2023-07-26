@@ -641,7 +641,7 @@ class WeaviateDataStore(DataStore):
             )
 
             # Update the upcount and downcount of the metadata
-            self.update_counts(from_document_id, to_document_id, increment=True)
+            self.update_counts(from_document_id, to_document_id)
 
             return True
         except Exception as e:
@@ -689,7 +689,7 @@ class WeaviateDataStore(DataStore):
             )
             
             # Update the upcount and downcount of the metadata
-            self.update_counts(from_document_id, to_document_id, increment=False)
+            self.update_counts(from_document_id, to_document_id)
 
 
             return True
@@ -791,18 +791,18 @@ class WeaviateDataStore(DataStore):
             raise
 
         
-    def update_counts(self, from_document_id, to_document_id, increment=True):
+    def update_counts(self, from_document_id, to_document_id):
         
         # Update the upcount of the 'from' node and all its 'from' descendants
-        self._update_counts(from_document_id, direction='to', increment=increment)
+        self._update_counts(from_document_id, direction='to')
     
         # Update the downcount of the 'to' node and all its 'to' ancestors
-        self._update_counts(to_document_id, direction='from', increment=increment)
+        self._update_counts(to_document_id, direction='from')
 
-    def _update_counts(self, document_id, direction='to', increment=True):
+    def _update_counts(self, document_id, direction='to'):
         
         visited = set()
-        self._update_count_recursive(document_id, visited, direction, increment)
+        self._update_count_recursive(document_id, visited, direction)
     
     def _update_count_recursive(self, document_id, visited, direction):
         try:
