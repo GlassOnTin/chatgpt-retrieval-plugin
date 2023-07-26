@@ -834,10 +834,13 @@ class WeaviateDataStore(DataStore):
             count_type = "downcount" if direction == 'to' else "upcount"
             chunk_id = self.get_chunk_id(document_id)
             chunk = self.client.data_object.get_by_id(chunk_id, class_name=WEAVIATE_CLASS)
+            
             current_count = chunk.get('properties', {}).get(count_type, 0)
+            
             if not current_count:
                 current_count=0
-        
+            current_count = int(current_count)
+            
             if increment:
                 new_count = current_count + count
             else:
@@ -898,6 +901,9 @@ class WeaviateDataStore(DataStore):
                     continue
                 
                 related_doc_id = chunk.get('properties', {}).get('document_id', {})
+                
+                if related_doc_id == document_id:
+                   logger.error("From document is current document.")
                 
                 related_docs.append(related_doc_id)
     
