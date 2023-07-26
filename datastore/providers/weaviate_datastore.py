@@ -859,6 +859,8 @@ class WeaviateDataStore(DataStore):
     def get_related_nodes(self, document_id: str, direction: str='to') -> List[str]:
     
         try:
+            logger.info(f"Get_related_nodes of {document_id} in direction {direction}")
+            
             # Get the chunk ID for the document 
             chunk_id = self.get_chunk_id(document_id)
             
@@ -891,11 +893,7 @@ class WeaviateDataStore(DataStore):
                 if not related_chunk_id:
                     continue
                 
-                logger.info(f"related_chunk_id={related_chunk_id}")
-                
                 chunk = self.client.data_object.get_by_id(related_chunk_id, class_name=WEAVIATE_CLASS)
-                
-                logger.info(f"related chunk={chunk}")
                 
                 if not chunk or not chunk.get('properties'):
                     continue
@@ -903,9 +901,10 @@ class WeaviateDataStore(DataStore):
                 related_doc_id = chunk.get('properties', {}).get('document_id', {})
                 
                 if related_doc_id == document_id:
-                   logger.error("From document is current document.")
-                
-                related_docs.append(related_doc_id)
+                   logger.debug(f"{direction}  document is current document.")
+                else:
+                    logger.info(f"{direction}  related_doc_id={related_doc_id}")
+                    related_docs.append(related_doc_id)
     
             return related_docs
         
