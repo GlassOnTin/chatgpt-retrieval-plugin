@@ -627,7 +627,7 @@ class WeaviateDataStore(DataStore):
 
             # Create a Relationship object for the to_relationship_type
             to_relationship_id = self.create_relationship(
-                from_chunk_id, to_chunk_id, to_relationship_type
+                to_chunk_id, from_chunk_id, to_relationship_type
             )
 
             # Add a reference from the from_document to the from_relationship_type Relationship object
