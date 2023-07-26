@@ -794,10 +794,11 @@ class WeaviateDataStore(DataStore):
     def update_counts(self, from_document_id, to_document_id):
         
         # Update the upcount of the 'from' node and all its 'from' descendants
-        self._update_counts(from_document_id, direction='to')
-    
+        self._update_counts(from_document_id, direction='from', increment=increment)
+        
         # Update the downcount of the 'to' node and all its 'to' ancestors
-        self._update_counts(to_document_id, direction='from')
+        self._update_counts(to_document_id, direction='to', increment=increment)
+
 
     def _update_counts(self, document_id, direction='to'):
         
