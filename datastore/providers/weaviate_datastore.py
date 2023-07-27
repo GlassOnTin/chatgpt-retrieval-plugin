@@ -743,161 +743,123 @@ class WeaviateDataStore(DataStore):
             )
             raise
 
-    def create_relationship(
-        self, from_chunk_id: str, to_chunk_id: str, relationship_type: str
-    ) -> str:
+    def create_relationship(self, from_chunk_id: str, to_chunk_id: str, relationship_type: str) -> str:
         """
         Create a Relationship object
         """
+        relationship_data = {
+            "from_document": [{"beacon": f"weaviate://localhost/{from_chunk_id}"}],
+            "to_document": [{"beacon": f"weaviate://localhost/{to_chunk_id}"}],
+            "relationship_type": relationship_type,
+        }
+    
         try:
-            relationship_id = self.client.data_object.create(
-                {
-                    "from_document": [
-                        {"beacon": f"weaviate://localhost/{from_chunk_id}"}
-                    ],
-                    "to_document": [{"beacon": f"weaviate://localhost/{to_chunk_id}"}],
-                    "relationship_type": relationship_type,
-                },
-                WEAVIATE_RELATIONSHIP_CLASS,
-            )
-
-            return relationship_id
+            return self.client.data_object.create(relationship_data, WEAVIATE_RELATIONSHIP_CLASS)
         except Exception as e:
-            logger.error(
-                f"Failed to create relationship data object: {e}", exc_info=True
-            )
+            logger.error(f"Failed to create relationship data object: {e}", exc_info=True)
             raise
 
-    def add_reference_to_relationship(
-        self,
-        chunk_id: str,
-        relationship_id: str,
-        consistency_level: weaviate.data.replication.ConsistencyLevel,
-    ) -> None:
+    def add_reference_to_relationship(self, chunk_id: str, relationship_id: str, consistency_level: weaviate.data.replication.ConsistencyLevel) -> None:
         """
         Add a reference from a document to a Relationship object
         """
+        reference_data = {
+            "from_uuid": chunk_id,
+            "from_property_name": "relationships",
+            "to_uuid": relationship_id,
+            "from_class_name": WEAVIATE_CLASS,
+            "to_class_name": WEAVIATE_RELATIONSHIP_CLASS,
+            "consistency_level": consistency_level,
+        }
+    
         try:
-            self.client.data_object.reference.add(
-                from_uuid=chunk_id,
-                from_property_name="relationships",
-                to_uuid=relationship_id,
-                from_class_name=WEAVIATE_CLASS,
-                to_class_name=WEAVIATE_RELATIONSHIP_CLASS,
-                consistency_level=consistency_level,
-            )
+            self.client.data_object.reference.add(**reference_data)
         except Exception as e:
             logger.error(f"Failed to add reference to relationship: {e}", exc_info=True)
             raise
-
-        
+    
     def update_counts(self, from_document_id, to_document_id):
-        
-        # Update the upcount of the 'from' node and all its 'from' descendants
+        """
+        Update the upcount of the 'from' node and all its 'from' descendants
+        Update the downcount of the 'to' node and all its 'to' ancestors
+        """
         self._update_counts(from_document_id, direction='from')
-        
-        # Update the downcount of the 'to' node and all its 'to' ancestors
         self._update_counts(to_document_id, direction='to')
-
-
+    
     def _update_counts(self, document_id, direction='to'):
-        
+        """
+        Update counts recursively
+        """
         visited = set()
         self._update_count_recursive(document_id, visited, direction)
     
     def _update_count_recursive(self, document_id, visited, direction):
-        try:
-            if document_id in visited:
-                return 0
-        
-            visited.add(document_id)
-        
-            related_nodes = self.get_related_nodes(document_id, direction=direction)
-            count = len(related_nodes)
-            
-            logger.info(f"Doc {document_id} has {direction} {related_nodes}")
-        
-            for related_node_id in related_nodes:
-                count += self._update_count_recursive(related_node_id, visited, direction)
-        
-            self._update_count_in_db(document_id, count, direction)
-        
-            return count
-        
-        except Exception as e:
-            logger.error(f"Error update_count_recursive {document_id} {count} {direction}: {e}")
-            raise
-
+        """
+        Recursively update counts
+        """
+        if document_id in visited:
+            return 0
+    
+        visited.add(document_id)
+        related_nodes = self.get_related_nodes(document_id, direction=direction)
+        count = len(related_nodes) + sum(self._update_count_recursive(node, visited, direction) for node in related_nodes)
+    
+        self._update_count_in_db(document_id, count, direction)
+        return count
     
     def _update_count_in_db(self, document_id, count, direction):
+        """
+        Update count in database
+        """
+        count_type = "downcount" if direction == 'to' else "upcount"
+        chunk_id = self.get_chunk_id(document_id)
+    
         try:
-            count_type = "downcount" if direction == 'to' else "upcount"
-            chunk_id = self.get_chunk_id(document_id)
-            
             self.client.data_object.update(
                 uuid=chunk_id,
                 class_name=WEAVIATE_CLASS,
                 data_object={count_type: str(count)}
             )
-            
         except Exception as e:
             logger.error(f"Error update_count_in_db {document_id} {count} {direction}: {e}")
             raise
-
-            
-    def get_related_nodes(self, document_id: str, direction: str='to') -> List[str]:
     
-        try:
-            logger.info(f"Get_related_nodes of {document_id} in direction {direction}")
-            
-            # Get the chunk ID for the document 
-            chunk_id = self.get_chunk_id(document_id)
-            
-            # Fetch the full chunk/doc object using the id
-            chunk = self.client.data_object.get_by_id(chunk_id, class_name=WEAVIATE_CLASS)
-            
-            # Extract relationships
-            relationships = chunk.get('properties', {}).get('relationships', [])
-            
-            related_docs = []
-            
-            for relationship in relationships:
-            
-                relationship_id = relationship.get('beacon').split('/')[-1]
-                
-                # Fetch the relationship object
-                relationship_obj = self.client.data_object.get_by_id(relationship_id, class_name='OpenAIRelationship')
-                
-                # Extract the related document's ID from the 'from_document' or 'to_document' property
-                if direction in ['to', 'both']:
-                    to_document = relationship_obj.get('properties', {}).get('to_document', [{}])[0]
-                    related_chunk_id = to_document.get('beacon').split('/')[-1]
-                                    
-                if direction in ['from', 'both']:
-                    from_document = relationship_obj.get('properties', {}).get('from_document', [{}])[0]
-                    related_chunk_id = from_document.get('beacon').split('/')[-1]
-
-                if not related_chunk_id:
-                    continue
-                
-                chunk = self.client.data_object.get_by_id(related_chunk_id, class_name=WEAVIATE_CLASS)
-                
-                if not chunk or not chunk.get('properties'):
-                    continue
-                
-                related_doc_id = chunk.get('properties', {}).get('document_id', {})
-                
-                if related_doc_id == document_id:
-                   logger.debug(f"{direction}  document is current document.")
-                else:
-                    logger.info(f"{direction}  related_doc_id={related_doc_id}")
+    def get_related_nodes(self, document_id: str, direction: str='to') -> List[str]:
+        """
+        Get related nodes of a document in a specific direction
+        """
+        chunk_id = self.get_chunk_id(document_id)
+        chunk = self.client.data_object.get_by_id(chunk_id, class_name=WEAVIATE_CLASS)
+        relationships = chunk.get('properties', {}).get('relationships', [])
+    
+        related_docs = []
+        for relationship in relationships:
+            relationship_id = relationship.get('beacon').split('/')[-1]
+            relationship_obj = self.client.data_object.get_by_id(relationship_id, class_name='OpenAIRelationship')
+    
+            related_chunk_id = self._get_related_chunk_id(relationship_obj, direction)
+            if related_chunk_id:
+                related_doc_id = self._get_related_doc_id(related_chunk_id)
+                if related_doc_id != document_id:
                     related_docs.append(related_doc_id)
     
-            return related_docs
-        
-        except Exception as e:
-            logger.error(f"Error getting related nodes for {document_id}: {e}")
-            raise
+        return related_docs
+    
+    def _get_related_chunk_id(self, relationship_obj, direction):
+        """
+        Get related chunk ID from a relationship object
+        """
+        document_key = 'to_document' if direction == 'to' else 'from_document'
+        document = relationship_obj.get('properties', {}).get(document_key, [{}])[0]
+        return document.get('beacon').split('/')[-1]
+    
+    def _get_related_doc_id(self, related_chunk_id):
+        """
+        Get related document ID from a chunk ID
+        """
+        chunk = self.client.data_object.get_by_id(related_chunk_id, class_name=WEAVIATE_CLASS)
+        return chunk.get('properties', {}).get('document_id', {}) if chunk and chunk.get('properties') else None
+
     
 
     @staticmethod
