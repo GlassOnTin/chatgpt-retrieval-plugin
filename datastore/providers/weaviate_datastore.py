@@ -802,10 +802,12 @@ class WeaviateDataStore(DataStore):
     
         visited.add(document_id)
         related_nodes = self.get_related_nodes(document_id, direction=direction)
-        count = len(related_nodes) + sum(self._update_count_recursive(node, visited, direction) for node in related_nodes)
+        unique_related_nodes = set(related_nodes)
+        count = len(unique_related_nodes) + sum(self._update_count_recursive(node, visited, direction) for node in unique_related_nodes)
     
         self._update_count_in_db(document_id, count, direction)
         return count
+
     
     def _update_count_in_db(self, document_id, count, direction):
         """
