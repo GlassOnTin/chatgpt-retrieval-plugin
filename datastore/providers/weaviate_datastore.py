@@ -690,7 +690,7 @@ class WeaviateDataStore(DataStore):
             
             # Update the upcount and downcount of the metadata
             self.update_counts(from_document_id, to_document_id)
-
+            self.update_counts(to_document_id, from_document_id)
 
             return True
         except Exception as e:
